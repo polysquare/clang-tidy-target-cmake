@@ -1,0 +1,27 @@
+\language: cpp
+env:
+  - CMAKE_GENERATOR="Unix Makefiles"
+  - CMAKE_GENERATOR="Ninja"
+before_install:
+  - git submodule update --init --recursive
+  - sudo apt-add-repository -y ppa:kalakris/cmake
+  - sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test
+  - echo deb http://llvm.org/apt/precise/ llvm-toolchain-precise main | sudo tee --append /etc/apt/sources.list
+  - echo deb http://llvm.org/apt/precise/ llvm-toolchain-precise main | sudo tee --append /etc/apt/sources.list
+  - sudo apt-get update -y
+  - sudo apt-get install -qq --force-yes `cat DEPENDENCIES`
+  - sudo ln -s /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy
+  # Workaround to get Ninja to display verbose output
+  - if [[ $CMAKE_GENERATOR == "Ninja" ]] ; then
+     echo -e '!#/bin/bash\n/usr/bin/ninja -v $@' > ninja;
+     chmod +x ninja;
+     export PATH=`pwd`:${PATH};
+    fi
+script:
+  - clang-tidy --version
+  - mkdir -p test/build
+  - pushd test/build
+  - cmake .. -G "${CMAKE_GENERATOR}" &&
+    cmake --build `pwd` &&
+    ctest --output-on-failure &&
+    popd
