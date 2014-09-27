@@ -70,12 +70,144 @@ function (_filter_out_generated_sources RESULT_VARIABLE)
 
 endfunction ()
 
+function (_psq_make_compilation_db TARGET
+                                   COMPILATION_DB_DIR_RETURN)
+
+    set (MAKE_COMP_DB_OPTIONS)
+    set (MAKE_COMP_DB_SINGLEVAR_OPTIONS
+         FORCE_LANGUAGE)
+    set (MAKE_COMP_DB_MULTIVAR_OPTIONS
+         SOURCES
+         INTERNAL_INCLUDE_DIRS
+         EXTERNAL_INCLUDE_DIRS
+         DEFINES)
+
+    cmake_parse_arguments (MAKE_COMP_DB
+                           "${MAKE_COMP_DB_OPTIONS}"
+                           "${MAKE_COMP_DB_SINGLEVAR_OPTIONS}"
+                           "${MAKE_COMP_DB_MULTIVAR_OPTIONS}"
+                           ${ARGN})
+
+    set (COMPILATION_DB_DIR
+         ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_compile_commands/)
+    set (COMPILATION_DB_FILE
+         ${COMPILATION_DB_DIR}/compile_commands.json)
+
+    set (COMPILATION_DB_FILE_CONTENTS
+         "[")
+
+    foreach (SOURCE ${MAKE_COMP_DB_SOURCES})
+
+        get_filename_component (FULL_PATH ${SOURCE} ABSOLUTE)
+        get_filename_component (BASENAME ${SOURCE} NAME)
+
+        set (LANGUAGE ${MAKE_COMP_DB_FORCE_LANGUAGE})
+        if (NOT LANGUAGE)
+
+            # Get the language of the file.
+            polysquare_determine_language_for_source (${FULL_PATH}
+                                                      LANGUAGE
+                                                      SOURCE_WAS_HEADER
+                                                      INCLUDES
+                                                      ${ALL_INCLUDE_DIRS})
+
+        endif (NOT LANGUAGE)
+
+        set (COMPILATION_DB_FILE_CONTENTS
+             "${COMPILATION_DB_FILE_CONTENTS}\n{\n"
+             "\"directory\": \"${CMAKE_CURRENT_BINARY_DIR}\",\n"
+             "\"command\": \"${CMAKE_CXX_COMPILER}"
+             " -o CMakeFiles/${TARGET}.dir/${BASENAME}.o"
+             " -c ${FULL_PATH}")
+
+        # All includes
+        foreach (INTERNAL_INCLUDE ${MAKE_COMP_DB_INTERNAL_INCLUDE_DIRS})
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS} -I${INTERNAL_INCLUDE}")
+
+        endforeach ()
+
+        foreach (EXTERNAL_INCLUDE ${MAKE_COMP_DB_EXTERNAL_INCLUDE_DIRS})
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS}"
+                 "-isystem${EXTERNAL_INCLUDE}")
+
+        endforeach ()
+
+        # All defines
+        foreach (DEFINE ${MAKE_COMP_DB_DEFINES})
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS} -D${DEFINE}")
+
+        endforeach ()
+
+        # CXXFLAGS / CFLAGS
+        list (FIND LANGUAGE "CXX" CXX_INDEX)
+
+        if (NOT CXX_INDEX EQUAL -1)
+
+            # Only redefine __cplusplus if this is a header file
+            if (SOURCE_WAS_HEADER)
+
+                set (COMPILATION_DB_FILE_CONTENTS
+                     "${COMPILATION_DB_FILE_CONTENTS} -D__cplusplus")
+
+            endif (SOURCE_WAS_HEADER)
+
+            # Add CMAKE_CXX_FLAGS
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS} ${CMAKE_CXX_FLAGS}")
+
+        else (NOT CXX_INDEX EQUAL -1)
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS} ${CMAKE_C_FLAGS}")
+
+        endif (NOT CXX_INDEX EQUAL -1)
+
+        set (COMPILATION_DB_FILE_CONTENTS
+             "${COMPILATION_DB_FILE_CONTENTS}\",\n"
+             "\"file\": \"${FULL_PATH}\"\n"
+             "},")
+
+    endforeach ()
+
+    # Get rid of all the semicolons
+    string (REPLACE ";" ""
+            COMPILATION_DB_FILE_CONTENTS
+            "${COMPILATION_DB_FILE_CONTENTS}")
+
+    # Take away the last comma
+    string (LENGTH
+            "${COMPILATION_DB_FILE_CONTENTS}"
+            COMPILATION_DB_FILE_LENGTH)
+    math (EXPR TRIMMED_COMPILATION_DB_FILE_LENGTH
+          "${COMPILATION_DB_FILE_LENGTH} - 1")
+    string (SUBSTRING "${COMPILATION_DB_FILE_CONTENTS}"
+            0 ${TRIMMED_COMPILATION_DB_FILE_LENGTH}
+            COMPILATION_DB_FILE_CONTENTS)
+
+    # Final "]"
+    set (COMPILATION_DB_FILE_CONTENTS
+         "${COMPILATION_DB_FILE_CONTENTS}\n]\n")
+
+    # Write out
+    file (WRITE ${COMPILATION_DB_FILE}
+          ${COMPILATION_DB_FILE_CONTENTS})
+
+    set (${COMPILATION_DB_DIR_RETURN}
+         ${COMPILATION_DB_DIR} PARENT_SCOPE)
+
+endfunction (_psq_make_compilation_db)
+
 function (clang_tidy_check_target_sources TARGET)
 
     set (CHECK_SOURCES_OPTIONS
          CHECK_GENERATED
-         ALLOW_WARNINGS
-         USE_OWN_COMPILATION_DB)
+         ALLOW_WARNINGS)
     set (CHECK_SOURCES_SINGLEVAR_OPTIONS
          FORCE_LANGUAGE)
     set (CHECK_SOURCES_MULTIVAR_OPTIONS
@@ -128,132 +260,81 @@ function (clang_tidy_check_target_sources TARGET)
 
     endforeach ()
 
+    if (CHECK_SOURCES_FORCE_LANGUAGE)
+
+        set (FORCE_LANGUAGE_OPTION
+             FORCE_LANGUAGE ${CHECK_SOURCES_FORCE_LANGUAGE})
+
+    endif (CHECK_SOURCES_FORCE_LANGUAGE)
+
     # Special rules apply for UTILITY type targets. We need to run
-    # the tool PRE_BUILD as opposed to PRE_LINK and we also need
-    # to generate a fake compilation database as CMake won't do it
-    # for us in this instance.
+    # the tool PRE_BUILD as opposed to PRE_LINK.
     if (TARGET_TYPE STREQUAL "UTILITY")
 
         set (WHEN PRE_BUILD)
-        set (COMPILATION_DB_DIR
-             ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_compile_commands/)
-        set (COMPILATION_DB_FILE
-             ${COMPILATION_DB_DIR}/compile_commands.json)
+        set (CUSTOM_COMPILATION_DB_SOURCES ${FILES_TO_CHECK})
 
-        set (COMPILATION_DB_FILE_CONTENTS
-             "[")
+    else (TARGET_TYPE STREQUAL "UTILITY")
 
+        # Separate out headers and real sources
         foreach (SOURCE ${FILES_TO_CHECK})
 
-            get_filename_component (FULL_PATH ${SOURCE} ABSOLUTE)
-            get_filename_component (BASENAME ${SOURCE} NAME)
+            polysquare_determine_language_for_source (${SOURCE}
+                                                      LANGUAGE
+                                                      SOURCE_WAS_HEADER
+                                                      INCLUDES
+                                                      ${ALL_INCLUDE_DIRS})
 
-            set (LANGUAGE ${CHECK_SOURCES_FORCE_LANGUAGE})
-            if (NOT LANGUAGE)
+            if (SOURCE_WAS_HEADER)
 
-                # Get the language of the file.
-                polysquare_determine_language_for_source (${FULL_PATH}
-                                                          LANGUAGE
-                                                          SOURCE_WAS_HEADER
-                                                          INCLUDES
-                                                          ${ALL_INCLUDE_DIRS})
+                list (APPEND CUSTOM_COMPILATION_DB_SOURCES ${SOURCE})
 
-            endif (NOT LANGUAGE)
-
-            set (COMPILATION_DB_FILE_CONTENTS
-                 "${COMPILATION_DB_FILE_CONTENTS}\n{\n"
-                 "\"directory\": \"${CMAKE_CURRENT_BINARY_DIR}\",\n"
-                 "\"command\": \"${CMAKE_CXX_COMPILER}"
-                 " -o CMakeFiles/${TARGET}.dir/${BASENAME}.o"
-                 " -c ${FULL_PATH}")
-
-            # All includes
-            foreach (INTERNAL_INCLUDE ${CHECK_SOURCES_INTERNAL_INCLUDE_DIRS})
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} -I${INTERNAL_INCLUDE}")
-
-            endforeach ()
-
-            foreach (EXTERNAL_INCLUDE ${CHECK_SOURCES_EXTERNAL_INCLUDE_DIRS})
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS}"
-                     "-isystem${EXTERNAL_INCLUDE}")
-
-            endforeach ()
-
-            # All defines
-            foreach (DEFINE ${CHECK_SOURCES_DEFINES})
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} -D${DEFINE}")
-
-            endforeach ()
-
-            # CXXFLAGS / CFLAGS
-            list (FIND LANGUAGE "CXX" CXX_INDEX)
-
-            if (NOT CXX_INDEX EQUAL -1)
-
-                # Only redefine __cplusplus if this is a header file
-                if (SOURCE_WAS_HEADER)
-
-                    set (COMPILATION_DB_FILE_CONTENTS
-                         "${COMPILATION_DB_FILE_CONTENTS} -D__cplusplus")
-
-                endif (SOURCE_WAS_HEADER)
-
-                # Add CMAKE_CXX_FLAGS
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} ${CMAKE_CXX_FLAGS}")
-
-            else (NOT CXX_INDEX EQUAL -1)
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} ${CMAKE_C_FLAGS}")
-
-            endif (NOT CXX_INDEX EQUAL -1)
-
-            set (COMPILATION_DB_FILE_CONTENTS
-                 "${COMPILATION_DB_FILE_CONTENTS}\",\n"
-                 "\"file\": \"${FULL_PATH}\"\n"
-                 "},")
+            endif (SOURCE_WAS_HEADER)
 
         endforeach ()
 
-        # Get rid of all the semicolons
-        string (REPLACE ";" ""
-                COMPILATION_DB_FILE_CONTENTS
-                "${COMPILATION_DB_FILE_CONTENTS}")
-
-        # Take away the last comma
-        string (LENGTH
-                "${COMPILATION_DB_FILE_CONTENTS}"
-                COMPILATION_DB_FILE_LENGTH)
-        math (EXPR TRIMMED_COMPILATION_DB_FILE_LENGTH
-              "${COMPILATION_DB_FILE_LENGTH} - 1")
-        string (SUBSTRING "${COMPILATION_DB_FILE_CONTENTS}"
-                0 ${TRIMMED_COMPILATION_DB_FILE_LENGTH}
-                COMPILATION_DB_FILE_CONTENTS)
-
-        # Final "]"
-        set (COMPILATION_DB_FILE_CONTENTS
-             "${COMPILATION_DB_FILE_CONTENTS}\n]\n")
-
-        # Write out
-        file (WRITE ${COMPILATION_DB_FILE}
-              ${COMPILATION_DB_FILE_CONTENTS})
-
-        # Set the CUSTOM_COMPILATION_DB switch option
-        set (CUSTOM_COMPILATION_DB_OPTION
-             "-DCUSTOM_COMPILATION_DB_DIR=${COMPILATION_DB_DIR}")
-
     endif (TARGET_TYPE STREQUAL "UTILITY")
+
+    # For mixed source-header targets or UTILITY targets, we need
+    # to generate a fake compilation database as CMake won't do it
+    # for us in this instance.
+    _psq_make_compilation_db (${TARGET}
+                              COMPILATION_DB_DIR
+                              ${FORCE_LANGUAGE_OPTION}
+                              SOURCES
+                              ${CUSTOM_COMPILATION_DB_SOURCES}
+                              INTERNAL_INCLUDE_DIRS
+                              ${CHECK_SOURCES_INTERNAL_INCLUDE_DIRS}
+                              EXTERNAL_INCLUDE_DIRS
+                              ${CHECK_SOURCES_EXTERNAL_INCLUDE_DIRS}
+                              DEFINES
+                              ${CHECK_SOURCES_DEFINES})
+
+    # Set the CUSTOM_COMPILATION_DB switch option
+    set (CUSTOM_COMPILATION_DB_OPTION
+         "-DCUSTOM_COMPILATION_DB_DIR=${COMPILATION_DB_DIR}")
+
 
     foreach (SOURCE ${FILES_TO_CHECK})
 
         get_filename_component (FULL_PATH ${SOURCE} ABSOLUTE)
+
+        # Check if this source is one that requires a custom
+        # compilation database
+        list (FIND CUSTOM_COMPILATION_DB_SOURCES ${SOURCE} SOURCE_INDEX)
+
+        if (NOT SOURCE_INDEX EQUAL -1)
+
+            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
+                 ${CUSTOM_COMPILATION_DB_OPTION})
+
+        else (NOT SOURCE_INDEX EQUAL -1)
+
+            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
+                 "")
+
+        endif (NOT SOURCE_INDEX EQUAL -1)
+
         add_custom_command (TARGET ${TARGET}
                             ${WHEN}
                             COMMAND
@@ -264,7 +345,7 @@ function (clang_tidy_check_target_sources TARGET)
                             -DENABLE_CHECKS=${CHECK_SOURCES_ENABLE_CHECKS}
                             -DDISABLE_CHECKS=${CHECK_SOURCES_DISABLE_CHECKS}
                             -DSOURCE=${SOURCE}
-                            ${CUSTOM_COMPILATION_DB_OPTION}
+                            ${SOURCE_CUSTOM_COMPILATION_DB_OPTION}
                             -P
                             ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
     endforeach ()

@@ -66,6 +66,8 @@ add_cmake_build_test (ClangTidyAllowWarningsOption
                       ClangTidyAllowWarningsOptionVerify)
 add_cmake_build_test (ClangTidyGenerateSpecialCompilationDB
                       ClangTidyGenerateSpecialCompilationDBVerify)
+add_cmake_build_test (ClangTidyGenerateSpecialCompilationDBForRealTargetHeaders
+                      ClangTidyGenerateSpecialCompilationDBForRealTargetHeadersVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBIncludes
                       ClangTidySpecialCompilationDBIncludesVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBDefines
