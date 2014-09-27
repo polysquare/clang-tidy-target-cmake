@@ -7,8 +7,10 @@
 include (CMakeParseArguments)
 set (ALLOW_WARNINGS FALSE CACHE FORCE "")
 set (ENABLE_CHECKS "" CACHE FORCE "")
+set (DISABLE_CHECKS "" CACHE FORCE "")
 set (CLANG_TIDY_EXECUTABLE "" CACHE FORCE "")
 set (SOURCE "" CACHE FORCE "")
+set (CUSTOM_COMPILATION_DB_DIR "" CACHE FORCE "")
 set (VERBOSE FALSE CACHE FORCE "")
 
 if (NOT CLANG_TIDY_EXECUTABLE)
@@ -65,19 +67,35 @@ function (_list_elements_to_comma_separated_list RETURN_LIST)
 
 endfunction ()
 
-# Construct enable arguments
-_list_elements_to_comma_separated_list (ENABLE_CHECKS_LIST
-                                        ELEMENTS ${ENABLE_CHECKS})
+# Construct checks arguments
+set (ALL_CHECKS ${ENABLE_CHECKS})
+foreach (CHECK ${DISABLE_CHECKS})
 
-if (ENABLE_CHECKS_LIST)
+    list (APPEND ALL_CHECKS -${CHECK})
 
-    set (ENABLE_CHECKS_SWITCH "-checks=${ENABLE_CHECKS_LIST}")
+endforeach ()
 
-endif (ENABLE_CHECKS_LIST)
+_list_elements_to_comma_separated_list (CHECKS_LIST_COMMA_SEPARATED
+                                        ELEMENTS
+                                        ${ALL_CHECKS})
+
+if (CHECKS_LIST_COMMA_SEPARATED)
+
+    set (CHECKS_SWITCH "-checks=${CHECKS_LIST_COMMA_SEPARATED}")
+
+endif (CHECKS_LIST_COMMA_SEPARATED)
+
+# Custom compilation DB
+if (CUSTOM_COMPILATION_DB_DIR)
+
+    set (CUSTOM_COMPILATION_DB_SWITCH "-p=${CUSTOM_COMPILATION_DB_DIR}")
+
+endif (CUSTOM_COMPILATION_DB_DIR)
 
 set (CLANG_TIDY_COMMAND_LINE
      ${CLANG_TIDY_EXECUTABLE}
-     ${ENABLE_CHECKS_SWITCH}
+     ${CHECKS_SWITCH}
+     ${CUSTOM_COMPILATION_DB_SWITCH}
      ${SOURCE})
 string (REPLACE ";" " "
         CLANG_TIDY_PRINTED_COMMAND_LINE

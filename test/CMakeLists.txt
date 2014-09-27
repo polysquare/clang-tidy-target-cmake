@@ -58,10 +58,28 @@ add_cmake_build_test (ClangTidyCheckGeneratedFlag
                       ClangTidyCheckGeneratedFlagVerify)
 add_cmake_build_test (ClangTidyEnableChecks
                       ClangTidyEnableChecksVerify)
+add_cmake_build_test (ClangTidyDisableChecks
+                      ClangTidyDisableChecksVerify)
 add_cmake_build_test (ClangTidyFatalErrorOnWarning
                       ClangTidyFatalErrorOnWarningVerify ALLOW_BUILD_FAIL)
 add_cmake_build_test (ClangTidyAllowWarningsOption
                       ClangTidyAllowWarningsOptionVerify)
+add_cmake_build_test (ClangTidyGenerateSpecialCompilationDB
+                      ClangTidyGenerateSpecialCompilationDBVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBIncludes
+                      ClangTidySpecialCompilationDBIncludesVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBDefines
+                      ClangTidySpecialCompilationDBDefinesVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBCPlusPlusMarkerPassed
+                      ClangTidySpecialCompilationDBCPlusPlusMarkerPassedVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCPPHeader
+                      ClangTidySpecialCompilationDBUseCXXFlagsForCPPHeaderVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderForceLanguage
+                      ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderForceLanguageVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdentifiers
+                      ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdentifiersVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCFlagsForCHeader
+                      ClangTidySpecialCompilationDBUseCFlagsForCHeaderVerify)
 
 # The ninja generator does dependency scanning at the start of the build
 # so we can't fool it into skipping this dependency by generating the
