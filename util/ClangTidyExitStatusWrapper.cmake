@@ -5,7 +5,7 @@
 #
 # See LICENCE.md for Copyright information
 include (CMakeParseArguments)
-set (ALLOW_WARNINGS FALSE CACHE FORCE "")
+set (WARN_ONLY FALSE CACHE FORCE "")
 set (ENABLE_CHECKS "" CACHE FORCE "")
 set (DISABLE_CHECKS "" CACHE FORCE "")
 set (CLANG_TIDY_EXECUTABLE "" CACHE FORCE "")
@@ -69,21 +69,26 @@ endfunction ()
 
 # Construct checks arguments
 set (ALL_CHECKS ${ENABLE_CHECKS})
+string (REPLACE "," ";" DISABLE_CHECKS "${DISABLE_CHECKS}")
 foreach (CHECK ${DISABLE_CHECKS})
 
-    list (APPEND ALL_CHECKS -${CHECK})
+    # Only need a comma after ALL_CHECKS if ALL_CHECKS
+    # was set at this point (eg, ENABLE_CHECKS was set)
+    if (ALL_CHECKS)
+
+        set (ALL_CHECKS_COMMA ",")
+
+    endif (ALL_CHECKS)
+
+    set (ALL_CHECKS "${ALL_CHECKS}${ALL_CHECKS_COMMA}-${CHECK}")
 
 endforeach ()
 
-_list_elements_to_comma_separated_list (CHECKS_LIST_COMMA_SEPARATED
-                                        ELEMENTS
-                                        ${ALL_CHECKS})
+if (ALL_CHECKS)
 
-if (CHECKS_LIST_COMMA_SEPARATED)
+    set (CHECKS_SWITCH "-checks=${ALL_CHECKS}")
 
-    set (CHECKS_SWITCH "-checks=${CHECKS_LIST_COMMA_SEPARATED}")
-
-endif (CHECKS_LIST_COMMA_SEPARATED)
+endif (ALL_CHECKS)
 
 # Custom compilation DB
 if (CUSTOM_COMPILATION_DB_DIR)
@@ -115,17 +120,17 @@ execute_process (COMMAND
                  OUTPUT_STRIP_TRAILING_WHITESPACE
                  ERROR_STRIP_TRAILING_WHITESPACE)
 
-if (${CLANG_TIDY_OUTPUT} MATCHES "^.*(error|warning).*$" OR
+if ("${CLANG_TIDY_OUTPUT}" MATCHES "^.*(error|warning).*$" OR
     NOT CLANG_TIDY_RESULT EQUAL 0)
 
     message ("${CLANG_TIDY_OUTPUT}")
     message ("${CLANG_TIDY_ERRORS}")
 
-    if (NOT ALLOW_WARNINGS)
+    if (NOT WARN_ONLY)
 
         message (FATAL_ERROR "Clang-Tidy found problems with your code")
 
-    endif (NOT ALLOW_WARNINGS)
+    endif (NOT WARN_ONLY)
 
-endif (${CLANG_TIDY_OUTPUT} MATCHES "^.*(error|warning).*$" OR
+endif ("${CLANG_TIDY_OUTPUT}" MATCHES "^.*(error|warning).*$" OR
        NOT CLANG_TIDY_RESULT EQUAL 0)

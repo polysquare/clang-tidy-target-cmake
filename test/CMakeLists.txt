@@ -26,6 +26,12 @@ set (CLANG_TIDY_INITIAL_CACHE_CONTENTS
      "     CACHE STRING \"\" FORCE)\n"
      "set (CLANG_TIDY_CMAKE_TESTS_DIRECTORY\n"
      "     ${CMAKE_UNIT_DIRECTORY}\n"
+     "     CACHE STRING \"\" FORCE)\n"
+     "set (CMAKE_C_COMPILER\n"
+     "     ${CMAKE_C_COMPILER}\n"
+     "     CACHE STRING \"\" FORCE)\n"
+     "set (CMAKE_CXX_COMPILER\n"
+     "     ${CMAKE_CXX_COMPILER}\n"
      "     CACHE STRING \"\" FORCE)\n")
 
 set (CMAKE_MODULE_PATH
@@ -72,10 +78,16 @@ add_cmake_build_test (ClangTidySpecialCompilationDBIncludes
                       ClangTidySpecialCompilationDBIncludesVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBDefines
                       ClangTidySpecialCompilationDBDefinesVerify)
-add_cmake_build_test (ClangTidySpecialCompilationDBCPlusPlusMarkerPassed
-                      ClangTidySpecialCompilationDBCPlusPlusMarkerPassedVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCPPHeader
                       ClangTidySpecialCompilationDBUseCXXFlagsForCPPHeaderVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXCompilerForCPPHeader
+                      ClangTidySpecialCompilationDBUseCXXCompilerForCPPHeaderVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCCompilerForCHeader
+                      ClangTidySpecialCompilationDBUseCCompilerForCHeaderVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXLanguageOptForCPPHeader
+                      ClangTidySpecialCompilationDBUseCXXLanguageOptForCPPHeaderVerify)
+add_cmake_build_test (ClangTidySpecialCompilationDBUseCLanguageOptForCHeader
+                      ClangTidySpecialCompilationDBUseCLanguageOptForCHeaderVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderForceLanguage
                       ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderForceLanguageVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdentifiers

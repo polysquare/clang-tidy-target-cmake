@@ -23,4 +23,4 @@ file (WRITE ${SOURCE_FILE} ${SOURCE_FILE_CONTENTS})
 
 add_executable (${EXECUTABLE} ${SOURCE_FILE})
 clang_tidy_check_target_sources (${EXECUTABLE}
-                                 ALLOW_WARNINGS)
+                                 WARN_ONLY)

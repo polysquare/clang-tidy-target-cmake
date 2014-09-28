@@ -71,7 +71,7 @@ function (_filter_out_generated_sources RESULT_VARIABLE)
 endfunction ()
 
 function (_psq_make_compilation_db TARGET
-                                   COMPILATION_DB_DIR_RETURN)
+                                   CUSTOM_COMPILATION_DB_DIR_RETURN)
 
     set (MAKE_COMP_DB_OPTIONS)
     set (MAKE_COMP_DB_SINGLEVAR_OPTIONS
@@ -88,10 +88,10 @@ function (_psq_make_compilation_db TARGET
                            "${MAKE_COMP_DB_MULTIVAR_OPTIONS}"
                            ${ARGN})
 
-    set (COMPILATION_DB_DIR
+    set (CUSTOM_COMPILATION_DB_DIR
          ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_compile_commands/)
     set (COMPILATION_DB_FILE
-         ${COMPILATION_DB_DIR}/compile_commands.json)
+         ${CUSTOM_COMPILATION_DB_DIR}/compile_commands.json)
 
     set (COMPILATION_DB_FILE_CONTENTS
          "[")
@@ -116,7 +116,25 @@ function (_psq_make_compilation_db TARGET
         set (COMPILATION_DB_FILE_CONTENTS
              "${COMPILATION_DB_FILE_CONTENTS}\n{\n"
              "\"directory\": \"${CMAKE_CURRENT_BINARY_DIR}\",\n"
-             "\"command\": \"${CMAKE_CXX_COMPILER}"
+             "\"command\": \"")
+
+        # Compiler and language options
+        list (FIND LANGUAGE "CXX" CXX_INDEX)
+        if (NOT CXX_INDEX EQUAL -1)
+
+             set (COMPILATION_DB_FILE_CONTENTS
+                  "${COMPILATION_DB_FILE_CONTENTS}${CMAKE_CXX_COMPILER} -x c++")
+
+        else (NOT CXX_INDEX EQUAL -1)
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS}${CMAKE_C_COMPILER}")
+
+        endif (NOT CXX_INDEX EQUAL -1)
+
+        # Fake output file etc.
+        set (COMPILATION_DB_FILE_CONTENTS
+             "${COMPILATION_DB_FILE_CONTENTS}"
              " -o CMakeFiles/${TARGET}.dir/${BASENAME}.o"
              " -c ${FULL_PATH}")
 
@@ -145,17 +163,8 @@ function (_psq_make_compilation_db TARGET
         endforeach ()
 
         # CXXFLAGS / CFLAGS
-        list (FIND LANGUAGE "CXX" CXX_INDEX)
 
         if (NOT CXX_INDEX EQUAL -1)
-
-            # Only redefine __cplusplus if this is a header file
-            if (SOURCE_WAS_HEADER)
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} -D__cplusplus")
-
-            endif (SOURCE_WAS_HEADER)
 
             # Add CMAKE_CXX_FLAGS
             set (COMPILATION_DB_FILE_CONTENTS
@@ -198,8 +207,8 @@ function (_psq_make_compilation_db TARGET
     file (WRITE ${COMPILATION_DB_FILE}
           ${COMPILATION_DB_FILE_CONTENTS})
 
-    set (${COMPILATION_DB_DIR_RETURN}
-         ${COMPILATION_DB_DIR} PARENT_SCOPE)
+    set (${CUSTOM_COMPILATION_DB_DIR_RETURN}
+         ${CUSTOM_COMPILATION_DB_DIR} PARENT_SCOPE)
 
 endfunction (_psq_make_compilation_db)
 
@@ -207,7 +216,7 @@ function (clang_tidy_check_target_sources TARGET)
 
     set (CHECK_SOURCES_OPTIONS
          CHECK_GENERATED
-         ALLOW_WARNINGS)
+         WARN_ONLY)
     set (CHECK_SOURCES_SINGLEVAR_OPTIONS
          FORCE_LANGUAGE)
     set (CHECK_SOURCES_MULTIVAR_OPTIONS
@@ -231,10 +240,10 @@ function (clang_tidy_check_target_sources TARGET)
                                        SOURCES ${FILES_TO_CHECK})
     endif (NOT CHECK_SOURCES_CHECK_GENERATED)
 
-    set (ALLOW_WARNINGS OFF)
-    if (CHECK_SOURCES_ALLOW_WARNINGS)
-        set (ALLOW_WARNINGS ON)
-    endif (CHECK_SOURCES_ALLOW_WARNINGS)
+    set (WARN_ONLY OFF)
+    if (CHECK_SOURCES_WARN_ONLY)
+        set (WARN_ONLY ON)
+    endif (CHECK_SOURCES_WARN_ONLY)
 
     # Figure out if this target is linkable. If it is a UTILITY
     # target then we need to run the checks at the PRE_BUILD stage.
@@ -299,7 +308,7 @@ function (clang_tidy_check_target_sources TARGET)
     # to generate a fake compilation database as CMake won't do it
     # for us in this instance.
     _psq_make_compilation_db (${TARGET}
-                              COMPILATION_DB_DIR
+                              CUSTOM_COMPILATION_DB_DIR
                               ${FORCE_LANGUAGE_OPTION}
                               SOURCES
                               ${CUSTOM_COMPILATION_DB_SOURCES}
@@ -310,9 +319,8 @@ function (clang_tidy_check_target_sources TARGET)
                               DEFINES
                               ${CHECK_SOURCES_DEFINES})
 
-    # Set the CUSTOM_COMPILATION_DB switch option
-    set (CUSTOM_COMPILATION_DB_OPTION
-         "-DCUSTOM_COMPILATION_DB_DIR=${COMPILATION_DB_DIR}")
+    string (REPLACE ";" "," ENABLE_CHECKS_LIST "${CHECK_SOURCES_ENABLE_CHECKS}")
+    string (REPLACE ";" "," DISABLE_CHECKS_LIST "${CHECK_SOURCES_DISABLE_CHECKS}")
 
 
     foreach (SOURCE ${FILES_TO_CHECK})
@@ -325,13 +333,11 @@ function (clang_tidy_check_target_sources TARGET)
 
         if (NOT SOURCE_INDEX EQUAL -1)
 
-            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
-                 ${CUSTOM_COMPILATION_DB_OPTION})
+            set (SOURCE_COMP_DB ${CUSTOM_COMPILATION_DB_DIR})
 
         else (NOT SOURCE_INDEX EQUAL -1)
 
-            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
-                 "")
+            set (SOURCE_COMP_DB ${CMAKE_BINARY_DIR})
 
         endif (NOT SOURCE_INDEX EQUAL -1)
 
@@ -340,12 +346,12 @@ function (clang_tidy_check_target_sources TARGET)
                             COMMAND
                             ${CMAKE_COMMAND}
                             -DVERBOSE=${CMAKE_VERBOSE_MAKEFILE}
-                            -DALLOW_WARNINGS=${ALLOW_WARNINGS}
+                            -DWARN_ONLY=${WARN_ONLY}
                             -DCLANG_TIDY_EXECUTABLE=${CLANG_TIDY_EXECUTABLE}
-                            -DENABLE_CHECKS=${CHECK_SOURCES_ENABLE_CHECKS}
-                            -DDISABLE_CHECKS=${CHECK_SOURCES_DISABLE_CHECKS}
+                            -DENABLE_CHECKS="${ENABLE_CHECKS_LIST}"
+                            -DDISABLE_CHECKS="${DISABLE_CHECKS_LIST}"
                             -DSOURCE=${SOURCE}
-                            ${SOURCE_CUSTOM_COMPILATION_DB_OPTION}
+                            -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
                             -P
                             ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
     endforeach ()
