@@ -216,7 +216,7 @@ function (clang_tidy_check_target_sources TARGET)
 
     set (CHECK_SOURCES_OPTIONS
          CHECK_GENERATED
-         ALLOW_WARNINGS)
+         WARN_ONLY)
     set (CHECK_SOURCES_SINGLEVAR_OPTIONS
          FORCE_LANGUAGE)
     set (CHECK_SOURCES_MULTIVAR_OPTIONS
@@ -240,10 +240,10 @@ function (clang_tidy_check_target_sources TARGET)
                                        SOURCES ${FILES_TO_CHECK})
     endif (NOT CHECK_SOURCES_CHECK_GENERATED)
 
-    set (ALLOW_WARNINGS OFF)
-    if (CHECK_SOURCES_ALLOW_WARNINGS)
-        set (ALLOW_WARNINGS ON)
-    endif (CHECK_SOURCES_ALLOW_WARNINGS)
+    set (WARN_ONLY OFF)
+    if (CHECK_SOURCES_WARN_ONLY)
+        set (WARN_ONLY ON)
+    endif (CHECK_SOURCES_WARN_ONLY)
 
     # Figure out if this target is linkable. If it is a UTILITY
     # target then we need to run the checks at the PRE_BUILD stage.
@@ -319,6 +319,9 @@ function (clang_tidy_check_target_sources TARGET)
                               DEFINES
                               ${CHECK_SOURCES_DEFINES})
 
+    string (REPLACE ";" "," ENABLE_CHECKS_LIST "${CHECK_SOURCES_ENABLE_CHECKS}")
+    string (REPLACE ";" "," DISABLE_CHECKS_LIST "${CHECK_SOURCES_DISABLE_CHECKS}")
+
 
     foreach (SOURCE ${FILES_TO_CHECK})
 
@@ -343,10 +346,10 @@ function (clang_tidy_check_target_sources TARGET)
                             COMMAND
                             ${CMAKE_COMMAND}
                             -DVERBOSE=${CMAKE_VERBOSE_MAKEFILE}
-                            -DALLOW_WARNINGS=${ALLOW_WARNINGS}
+                            -DWARN_ONLY=${WARN_ONLY}
                             -DCLANG_TIDY_EXECUTABLE=${CLANG_TIDY_EXECUTABLE}
-                            -DENABLE_CHECKS=${CHECK_SOURCES_ENABLE_CHECKS}
-                            -DDISABLE_CHECKS=${CHECK_SOURCES_DISABLE_CHECKS}
+                            -DENABLE_CHECKS="${ENABLE_CHECKS_LIST}"
+                            -DDISABLE_CHECKS="${DISABLE_CHECKS_LIST}"
                             -DSOURCE=${SOURCE}
                             -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
                             -P
