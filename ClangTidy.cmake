@@ -142,7 +142,7 @@ function (_psq_make_compilation_db TARGET
         foreach (INTERNAL_INCLUDE ${MAKE_COMP_DB_INTERNAL_INCLUDE_DIRS})
 
             set (COMPILATION_DB_FILE_CONTENTS
-                 "${COMPILATION_DB_FILE_CONTENTS} -I${INTERNAL_INCLUDE}")
+                 "${COMPILATION_DB_FILE_CONTENTS} -I${INTERNAL_INCLUDE} ")
 
         endforeach ()
 
@@ -150,7 +150,7 @@ function (_psq_make_compilation_db TARGET
 
             set (COMPILATION_DB_FILE_CONTENTS
                  "${COMPILATION_DB_FILE_CONTENTS}"
-                 "-isystem${EXTERNAL_INCLUDE}")
+                 "-isystem${EXTERNAL_INCLUDE} ")
 
         endforeach ()
 
