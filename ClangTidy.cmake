@@ -71,7 +71,7 @@ function (_filter_out_generated_sources RESULT_VARIABLE)
 endfunction ()
 
 function (_psq_make_compilation_db TARGET
-                                   COMPILATION_DB_DIR_RETURN)
+                                   CUSTOM_COMPILATION_DB_DIR_RETURN)
 
     set (MAKE_COMP_DB_OPTIONS)
     set (MAKE_COMP_DB_SINGLEVAR_OPTIONS
@@ -88,10 +88,10 @@ function (_psq_make_compilation_db TARGET
                            "${MAKE_COMP_DB_MULTIVAR_OPTIONS}"
                            ${ARGN})
 
-    set (COMPILATION_DB_DIR
+    set (CUSTOM_COMPILATION_DB_DIR
          ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_compile_commands/)
     set (COMPILATION_DB_FILE
-         ${COMPILATION_DB_DIR}/compile_commands.json)
+         ${CUSTOM_COMPILATION_DB_DIR}/compile_commands.json)
 
     set (COMPILATION_DB_FILE_CONTENTS
          "[")
@@ -198,8 +198,8 @@ function (_psq_make_compilation_db TARGET
     file (WRITE ${COMPILATION_DB_FILE}
           ${COMPILATION_DB_FILE_CONTENTS})
 
-    set (${COMPILATION_DB_DIR_RETURN}
-         ${COMPILATION_DB_DIR} PARENT_SCOPE)
+    set (${CUSTOM_COMPILATION_DB_DIR_RETURN}
+         ${CUSTOM_COMPILATION_DB_DIR} PARENT_SCOPE)
 
 endfunction (_psq_make_compilation_db)
 
@@ -299,7 +299,7 @@ function (clang_tidy_check_target_sources TARGET)
     # to generate a fake compilation database as CMake won't do it
     # for us in this instance.
     _psq_make_compilation_db (${TARGET}
-                              COMPILATION_DB_DIR
+                              CUSTOM_COMPILATION_DB_DIR
                               ${FORCE_LANGUAGE_OPTION}
                               SOURCES
                               ${CUSTOM_COMPILATION_DB_SOURCES}
@@ -309,10 +309,6 @@ function (clang_tidy_check_target_sources TARGET)
                               ${CHECK_SOURCES_EXTERNAL_INCLUDE_DIRS}
                               DEFINES
                               ${CHECK_SOURCES_DEFINES})
-
-    # Set the CUSTOM_COMPILATION_DB switch option
-    set (CUSTOM_COMPILATION_DB_OPTION
-         "-DCUSTOM_COMPILATION_DB_DIR=${COMPILATION_DB_DIR}")
 
 
     foreach (SOURCE ${FILES_TO_CHECK})
@@ -325,13 +321,11 @@ function (clang_tidy_check_target_sources TARGET)
 
         if (NOT SOURCE_INDEX EQUAL -1)
 
-            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
-                 ${CUSTOM_COMPILATION_DB_OPTION})
+            set (SOURCE_COMP_DB ${CUSTOM_COMPILATION_DB_DIR})
 
         else (NOT SOURCE_INDEX EQUAL -1)
 
-            set (SOURCE_CUSTOM_COMPILATION_DB_OPTION
-                 "")
+            set (SOURCE_COMP_DB ${CMAKE_BINARY_DIR})
 
         endif (NOT SOURCE_INDEX EQUAL -1)
 
@@ -345,7 +339,7 @@ function (clang_tidy_check_target_sources TARGET)
                             -DENABLE_CHECKS=${CHECK_SOURCES_ENABLE_CHECKS}
                             -DDISABLE_CHECKS=${CHECK_SOURCES_DISABLE_CHECKS}
                             -DSOURCE=${SOURCE}
-                            ${SOURCE_CUSTOM_COMPILATION_DB_OPTION}
+                            -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
                             -P
                             ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
     endforeach ()
