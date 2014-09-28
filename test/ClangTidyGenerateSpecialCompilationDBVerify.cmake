@@ -23,10 +23,11 @@ assert_file_has_line_matching (${BUILD_OUTPUT} ${COMMAND})
 
 set (COMPILE_COMMANDS
      ${CMAKE_CURRENT_BINARY_DIR}/target_compile_commands/compile_commands.json)
+string (REPLACE "+" "\+" ESCAPED_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 assert_file_has_line_matching (${COMPILE_COMMANDS}
                                "^.*${CMAKE_CURRENT_BINARY_DIR}.*$")
 assert_file_has_line_matching (${COMPILE_COMMANDS}
-                               "^.*${CMAKE_CXX_COMPILER}.*$")
+                               "^.*${ESCAPED_CXX_COMPILER}.*$")
 assert_file_has_line_matching (${COMPILE_COMMANDS}
                                "^.*Source.cpp.o.*$")
 assert_file_has_line_matching (${COMPILE_COMMANDS}

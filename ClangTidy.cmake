@@ -116,7 +116,25 @@ function (_psq_make_compilation_db TARGET
         set (COMPILATION_DB_FILE_CONTENTS
              "${COMPILATION_DB_FILE_CONTENTS}\n{\n"
              "\"directory\": \"${CMAKE_CURRENT_BINARY_DIR}\",\n"
-             "\"command\": \"${CMAKE_CXX_COMPILER}"
+             "\"command\": \"")
+
+        # Compiler and language options
+        list (FIND LANGUAGE "CXX" CXX_INDEX)
+        if (NOT CXX_INDEX EQUAL -1)
+
+             set (COMPILATION_DB_FILE_CONTENTS
+                  "${COMPILATION_DB_FILE_CONTENTS}${CMAKE_CXX_COMPILER} -x c++")
+
+        else (NOT CXX_INDEX EQUAL -1)
+
+            set (COMPILATION_DB_FILE_CONTENTS
+                 "${COMPILATION_DB_FILE_CONTENTS}${CMAKE_C_COMPILER}")
+
+        endif (NOT CXX_INDEX EQUAL -1)
+
+        # Fake output file etc.
+        set (COMPILATION_DB_FILE_CONTENTS
+             "${COMPILATION_DB_FILE_CONTENTS}"
              " -o CMakeFiles/${TARGET}.dir/${BASENAME}.o"
              " -c ${FULL_PATH}")
 
@@ -145,17 +163,8 @@ function (_psq_make_compilation_db TARGET
         endforeach ()
 
         # CXXFLAGS / CFLAGS
-        list (FIND LANGUAGE "CXX" CXX_INDEX)
 
         if (NOT CXX_INDEX EQUAL -1)
-
-            # Only redefine __cplusplus if this is a header file
-            if (SOURCE_WAS_HEADER)
-
-                set (COMPILATION_DB_FILE_CONTENTS
-                     "${COMPILATION_DB_FILE_CONTENTS} -D__cplusplus")
-
-            endif (SOURCE_WAS_HEADER)
 
             # Add CMAKE_CXX_FLAGS
             set (COMPILATION_DB_FILE_CONTENTS
