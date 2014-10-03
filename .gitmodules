@@ -4,3 +4,6 @@
 [submodule "determine-header-language"]
 	path = determine-header-language
 	url = git://github.com/polysquare/cmake-determine-header-language
+[submodule "tooling-cmake-util"]
+	path = tooling-cmake-util
+	url = git://github.com/polysquare/tooling-cmake-util
