@@ -64,10 +64,6 @@ function (clang_tidy_check_target_sources TARGET)
 
     # Scan each source file to determine its language. We might need
     # it later when generating a compilation database.
-    set (ALL_INCLUDE_DIRS
-         ${CHECK_SOURCES_INTERNAL_INCLUDE_DIRS}
-         ${CHECK_SOURCES_EXTERNAL_INCLUDE_DIRS})
-
     if (CHECK_SOURCES_FORCE_LANGUAGE)
 
         set (FORCE_LANGUAGE_OPTION
@@ -84,7 +80,8 @@ function (clang_tidy_check_target_sources TARGET)
     psq_sort_sources_to_languages (C_SOURCES CXX_SOURCES HEADERS
                                    SOURCES ${FILES_TO_CHECK}
                                    ${SORT_TO_LANGS_FORWARD_OPTIONS}
-                                   INCLUDES ${ALL_INCLUDE_DIRS})
+                                   INCLUDES
+                                   ${CHECK_SOURCES_INTERNAL_INCLUDE_DIRS})
 
     # Special rules apply for UTILITY type targets. We need to run
     # the tool PRE_BUILD as opposed to PRE_LINK.
