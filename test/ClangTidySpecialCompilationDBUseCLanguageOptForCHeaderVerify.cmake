@@ -3,7 +3,7 @@
 #
 # See LICENCE.md for Copyright information
 
-include (${CLANG_TIDY_CMAKE_TESTS_DIRECTORY}/CMakeUnit.cmake)
+include (CMakeUnit)
 
 set (COMPILE_COMMANDS
      ${CMAKE_CURRENT_BINARY_DIR}/target_compile_commands/compile_commands.json)

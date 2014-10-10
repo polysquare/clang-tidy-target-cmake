@@ -4,7 +4,7 @@
 #
 # See LICENCE.md for Copyright information
 
-include (${CLANG_TIDY_CMAKE_TESTS_DIRECTORY}/CMakeUnit.cmake)
+include (CMakeUnit)
 
 file (READ ${CMAKE_CURRENT_BINARY_DIR}/BUILD.output BUILD_OUTPUT)
 file (READ ${CMAKE_CURRENT_BINARY_DIR}/BUILD.error BUILD_ERROR)

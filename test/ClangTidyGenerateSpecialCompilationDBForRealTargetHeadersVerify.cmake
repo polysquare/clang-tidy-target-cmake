@@ -6,7 +6,7 @@
 #
 # See LICENCE.md for Copyright information
 
-include (${CLANG_TIDY_CMAKE_TESTS_DIRECTORY}/CMakeUnit.cmake)
+include (CMakeUnit)
 set (BUILD_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BUILD.output)
 
 set (SOURCE_COMMAND

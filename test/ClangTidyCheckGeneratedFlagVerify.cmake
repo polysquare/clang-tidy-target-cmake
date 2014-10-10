@@ -4,7 +4,7 @@
 #
 # See LICENCE.md for Copyright information
 
-include (${CLANG_TIDY_CMAKE_TESTS_DIRECTORY}/CMakeUnit.cmake)
+include (CMakeUnit)
 set (BUILD_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/BUILD.output)
 
 assert_file_has_line_matching (${BUILD_OUTPUT}
