@@ -57,6 +57,9 @@ bootstrap_cmake_unit (INITIAL_CACHE_CONTENTS
 
 add_cmake_test (TurnCMakeExportCompileCommandsOn)
 
+add_cmake_build_test (ClangTidyVersionDetectedOnValidate
+                      ClangTidyVersionDetectedOnValidateVerify
+                      NO_CLEAN)
 add_cmake_build_test (ClangTidyOnTargetSources
                       ClangTidyOnTargetSourcesVerify)
 add_cmake_build_test (ClangTidyNoCheckGenerated
