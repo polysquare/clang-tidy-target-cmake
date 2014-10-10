@@ -21,12 +21,6 @@ set (CMAKE_UNIT_DIRECTORY
      ${CLANG_TIDY_CMAKE_DIRECTORY}/cmake-unit)
 
 set (CLANG_TIDY_INITIAL_CACHE_CONTENTS
-     "set (CLANG_TIDY_CMAKE_DIRECTORY\n"
-     "     ${CLANG_TIDY_CMAKE_DIRECTORY}\n"
-     "     CACHE STRING \"\" FORCE)\n"
-     "set (CLANG_TIDY_CMAKE_TESTS_DIRECTORY\n"
-     "     ${CMAKE_UNIT_DIRECTORY}\n"
-     "     CACHE STRING \"\" FORCE)\n"
      "set (CMAKE_C_COMPILER\n"
      "     ${CMAKE_C_COMPILER}\n"
      "     CACHE STRING \"\" FORCE)\n"
@@ -39,7 +33,14 @@ set (CMAKE_MODULE_PATH
      ${CLANG_TIDY_CMAKE_DIRECTORY}
      ${CMAKE_MODULE_PATH})
 
-# Include CPPCheck.cmake too so that we can figure out which tests we can run
+foreach (PATH ${CMAKE_MODULE_PATH})
+     set (CLANG_TIDY_INITIAL_CACHE_CONTENTS
+          "${CLANG_TIDY_INITIAL_CACHE_CONTENTS}\n"
+          "set (CMAKE_MODULE_PATH ${PATH} \${CMAKE_MODULE_PATH}\n"
+          "     CACHE STRING \"\" FORCE)\n")
+endforeach ()
+
+# Include ClangTidy to determine whether we can run the tests.
 include (ClangTidy)
 _validate_clang_tidy (CONTINUE)
 
@@ -94,9 +95,3 @@ add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdent
                       ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdentifiersVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBUseCFlagsForCHeader
                       ClangTidySpecialCompilationDBUseCFlagsForCHeaderVerify)
-
-# The ninja generator does dependency scanning at the start of the build
-# so we can't fool it into skipping this dependency by generating the
-# stampfile during the build.
-if (NOT CMAKE_GENERATOR STREQUAL "Ninja")
-endif (NOT CMAKE_GENERATOR STREQUAL "Ninja")

@@ -3,7 +3,7 @@
 #
 # See LICENCE.md for Copyright information
 
-include (${CLANG_TIDY_CMAKE_TESTS_DIRECTORY}/CMakeUnit.cmake)
-include (${CLANG_TIDY_CMAKE_DIRECTORY}/ClangTidy.cmake)
+include (CMakeUnit)
+include (ClangTidy)
 
 assert_true (${CMAKE_EXPORT_COMPILE_COMMANDS})
