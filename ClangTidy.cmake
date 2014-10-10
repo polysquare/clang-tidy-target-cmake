@@ -9,14 +9,17 @@ include (${CMAKE_CURRENT_LIST_DIR}/tooling-cmake-util/PolysquareToolingUtil.cmak
 set (CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION
      ${CMAKE_CURRENT_LIST_DIR}/util/ClangTidyExitStatusWrapper.cmake)
 
-function (_validate_clang_tidy CONTINUE)
+macro (_validate_clang_tidy CONTINUE)
 
-    find_program (CLANG_TIDY_EXECUTABLE clang-tidy)
+    if (NOT DEFINED ClangTidy_FOUND)
 
-    set (${CONTINUE} TRUE PARENT_SCOPE)
-    set (CLANG_TIDY_EXECUTABLE ${CLANG_TIDY_EXECUTABLE} PARENT_SCOPE)
+        find_package (ClangTidy ${ARGN})
 
-endfunction ()
+    endif (NOT DEFINED ClangTidy_FOUND)
+
+    set (${CONTINUE} ${ClangTidy_FOUND})
+
+endmacro ()
 
 set (CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
