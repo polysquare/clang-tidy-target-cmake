@@ -61,13 +61,6 @@ function (_find_clang_tidy)
                                        CLANG_TIDY_EXECUTABLE
                                        CLANG_TIDY_VERSION)
 
-    psq_print_if_not_quiet (ClangTidy
-                            MSG "ClangTidy version"
-                                "${CLANG_TIDY_VERSION} found at"
-                                "${CLANG_TIDY_EXECUTABLE}"
-                            DEPENDS CLANG_TIDY_VERSION
-                                    CLANG_TIDY_EXECUTABLE)
-
     set (ClangTidy_FOUND ${ClangTidy_FOUND} PARENT_SCOPE)
 
 endfunction (_find_clang_tidy)
