@@ -44,8 +44,7 @@ bootstrap_cmake_unit (VARIABLES CMAKE_MODULE_PATH
 add_cmake_test (TurnCMakeExportCompileCommandsOn)
 
 add_cmake_build_test (ClangTidyVersionDetectedOnValidate
-                      ClangTidyVersionDetectedOnValidateVerify
-                      NO_CLEAN)
+                      ClangTidyVersionDetectedOnValidateVerify)
 add_cmake_build_test (ClangTidyOnTargetSources
                       ClangTidyOnTargetSourcesVerify)
 add_cmake_build_test (ClangTidyNoCheckGenerated
@@ -62,8 +61,6 @@ add_cmake_build_test (ClangTidyAllowWarningsOption
                       ClangTidyAllowWarningsOptionVerify)
 add_cmake_build_test (ClangTidyGenerateSpecialCompilationDB
                       ClangTidyGenerateSpecialCompilationDBVerify)
-add_cmake_build_test (ClangTidyGenerateSpecialCompilationDBForRealTargetHeaders
-                      ClangTidyGenerateSpecialCompilationDBForRealTargetHeadersVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBIncludes
                       ClangTidySpecialCompilationDBIncludesVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBDefines
@@ -84,3 +81,12 @@ add_cmake_build_test (ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdent
                       ClangTidySpecialCompilationDBUseCXXFlagsForCHeaderCPPIdentifiersVerify)
 add_cmake_build_test (ClangTidySpecialCompilationDBUseCFlagsForCHeader
                       ClangTidySpecialCompilationDBUseCFlagsForCHeaderVerify)
+
+if (CMAKE_GENERATOR STREQUAL "Ninja" OR
+    CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+
+    add_cmake_build_test (ClangTidyGenerateSpecialCompilationDBForRealTargetHeaders
+                          ClangTidyGenerateSpecialCompilationDBForRealTargetHeadersVerify)
+
+endif (CMAKE_GENERATOR STREQUAL "Ninja" OR
+       CMAKE_GENERATOR STREQUAL "Unix Makefiles")
