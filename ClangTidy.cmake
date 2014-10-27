@@ -3,8 +3,12 @@
 #
 # See LICENCE.md for Copyright information
 
+set (CMAKE_MODULE_PATH
+     ${CMAKE_CURRENT_LIST_DIR}/tooling-cmake-util
+     ${CMAKE_MODULE_PATH})
+
 include (CMakeParseArguments)
-include (${CMAKE_CURRENT_LIST_DIR}/tooling-cmake-util/PolysquareToolingUtil.cmake)
+include (PolysquareToolingUtil)
 
 set (CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION
      ${CMAKE_CURRENT_LIST_DIR}/util/ClangTidyExitStatusWrapper.cmake)
@@ -44,7 +48,7 @@ function (clang_tidy_check_target_sources TARGET)
                            "${CHECK_SOURCES_MULTIVAR_OPTIONS}"
                            ${ARGN})
 
-    psq_strip_add_custom_target_sources (FILES_TO_CHECK ${TARGET})
+    psq_strip_extraneous_sources (FILES_TO_CHECK ${TARGET})
     psq_handle_check_generated_option (CHECK_SOURCES FILES_TO_CHECK
                                        SOURCES ${FILES_TO_CHECK})
 
@@ -60,10 +64,6 @@ function (clang_tidy_check_target_sources TARGET)
     psq_add_switch (CLANG_TIDY_OPTIONS CHECK_SOURCES_WARN_ONLY
                     ON -DWARN_ONLY=ON
                     OFF -DWARN_ONLY=OFF)
-
-    # Figure out if this target is linkable. If it is a UTILITY
-    # target then we need to run the checks at the PRE_BUILD stage.
-    psq_get_target_command_attach_point (${TARGET} WHEN)
 
     # Scan each source file to determine its language. We might need
     # it later when generating a compilation database.
@@ -86,27 +86,35 @@ function (clang_tidy_check_target_sources TARGET)
                                    INCLUDES
                                    ${CHECK_SOURCES_INTERNAL_INCLUDE_DIRS})
 
-    # Special rules apply for UTILITY type targets. We need to run
-    # the tool PRE_BUILD as opposed to PRE_LINK.
-    if (WHEN STREQUAL "PRE_BUILD")
+    # By default, fall back to using generated compilation database
+    # until it can be proven that using the CMake generated one is a better
+    # choice.
+    set (CUSTOM_COMPILATION_DB_SOURCES ${FILES_TO_CHECK})
 
-        set (CUSTOM_COMPILATION_DB_SOURCES ${FILES_TO_CHECK})
+    if (CMAKE_GENERATOR STREQUAL "Ninja" OR
+        CMAKE_GENERATOR STREQUAL "Unix Makefiles")
 
-    else (WHEN STREQUAL "PRE_BUILD")
+        psq_get_target_command_attach_point (${TARGET} WHEN)
 
-        # Add headers to compilation DB for linkable
-        set (CUSTOM_COMPILATION_DB_SOURCES ${HEADERS})
+        # A compilation database is generated for all linkable targets, so
+        # if we're running PRE_LINK then use that
+        if (WHEN STREQUAL "PRE_LINK")
 
-    endif (WHEN STREQUAL "PRE_BUILD")
+            set (CUSTOM_COMPILATION_DB_SOURCES ${HEADERS})
+
+        endif (WHEN STREQUAL "PRE_LINK")
+
+    endif (CMAKE_GENERATOR STREQUAL "Ninja" OR
+           CMAKE_GENERATOR STREQUAL "Unix Makefiles")
 
     # Keep C_SOURCES and CXX_SOURCES intersecting with the sources
     # we wish to make a compilation DB for.
     psq_get_list_intersection (C_COMP_DB_SOURCES
-                                SOURCE ${C_SOURCES}
-                                INTERSECTION ${CUSTOM_COMPILATION_DB_SOURCES})
+                               SOURCE ${C_SOURCES}
+                               INTERSECTION ${CUSTOM_COMPILATION_DB_SOURCES})
     psq_get_list_intersection (CXX_COMP_DB_SOURCES
-                                SOURCE ${CXX_SOURCES}
-                                INTERSECTION ${CUSTOM_COMPILATION_DB_SOURCES})
+                               SOURCE ${CXX_SOURCES}
+                               INTERSECTION ${CUSTOM_COMPILATION_DB_SOURCES})
 
     # For mixed source-header targets or UTILITY targets, we need
     # to generate a fake compilation database as CMake won't do it
@@ -125,8 +133,6 @@ function (clang_tidy_check_target_sources TARGET)
 
     foreach (SOURCE ${FILES_TO_CHECK})
 
-        get_filename_component (FULL_PATH ${SOURCE} ABSOLUTE)
-
         # Check if this source is one that requires a custom
         # compilation database
         list (FIND CUSTOM_COMPILATION_DB_SOURCES ${SOURCE} SOURCE_INDEX)
@@ -141,15 +147,14 @@ function (clang_tidy_check_target_sources TARGET)
 
         endif (NOT SOURCE_INDEX EQUAL -1)
 
-        add_custom_command (TARGET ${TARGET}
-                            ${WHEN}
-                            COMMAND
-                            ${CMAKE_COMMAND}
-                            -DSOURCE=${SOURCE}
-                            -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
-                            ${CLANG_TIDY_OPTIONS}
-                            -P
-                            ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
+        psq_run_tool_on_source (${TARGET} ${SOURCE} "clang-tidy"
+                                COMMAND
+                                ${CMAKE_COMMAND}
+                                -DSOURCE=${SOURCE}
+                                -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
+                                ${CLANG_TIDY_OPTIONS}
+                                -P
+                                ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
     endforeach ()
 
 endfunction ()
