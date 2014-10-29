@@ -40,7 +40,8 @@ function (clang_tidy_check_target_sources TARGET)
          INTERNAL_INCLUDE_DIRS
          EXTERNAL_INCLUDE_DIRS
          DEFINES
-         CPP_IDENTIFIERS)
+         CPP_IDENTIFIERS
+         DEPENDS)
 
     cmake_parse_arguments (CHECK_SOURCES
                            "${CHECK_SOURCES_OPTIONS}"
@@ -147,6 +148,8 @@ function (clang_tidy_check_target_sources TARGET)
 
         endif (NOT SOURCE_INDEX EQUAL -1)
 
+        psq_forward_options (CHECK_SOURCES RUN_TOOL_ON_SOURCE_FORWARD
+                             MULTIVAR_ARGS DEPENDS)
         psq_run_tool_on_source (${TARGET} ${SOURCE} "clang-tidy"
                                 COMMAND
                                 ${CMAKE_COMMAND}
@@ -154,7 +157,8 @@ function (clang_tidy_check_target_sources TARGET)
                                 -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
                                 ${CLANG_TIDY_OPTIONS}
                                 -P
-                                ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION})
+                                ${CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION}
+                                ${RUN_TOOL_ON_SOURCE_FORWARD})
     endforeach ()
 
 endfunction ()
