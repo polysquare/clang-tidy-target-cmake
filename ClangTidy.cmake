@@ -1,27 +1,24 @@
-# /tests/ClangTidy.cmake
+# /ClangTidy.cmake
+#
 # CMake macro to run clang-tidy on target sources.
 #
-# See LICENCE.md for Copyright information
-
-set (CMAKE_MODULE_PATH
-     ${CMAKE_CURRENT_LIST_DIR}/tooling-cmake-util
-     ${CMAKE_MODULE_PATH})
+# See /LICENCE.md for Copyright information
 
 include (CMakeParseArguments)
-include (PolysquareToolingUtil)
+include ("smspillaz/tooling-cmake-util/PolysquareToolingUtil")
 
 set (CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION
-     ${CMAKE_CURRENT_LIST_DIR}/util/ClangTidyExitStatusWrapper.cmake)
+     "${CMAKE_CURRENT_LIST_DIR}/util/ClangTidyExitStatusWrapper.cmake")
 
-macro (_validate_clang_tidy CONTINUE)
+macro (clang_tidy_validate CONTINUE)
 
-    if (NOT DEFINED ClangTidy_FOUND)
+    if (NOT DEFINED CLANG_TIDY_FOUND)
 
-        find_package (ClangTidy ${ARGN})
+        find_package (CLANGTIDY ${ARGN})
 
-    endif (NOT DEFINED ClangTidy_FOUND)
+    endif ()
 
-    set (${CONTINUE} ${ClangTidy_FOUND})
+    set (${CONTINUE} ${CLANG_TIDY_FOUND})
 
 endmacro ()
 
@@ -54,11 +51,12 @@ function (clang_tidy_check_target_sources TARGET)
                                        SOURCES ${FILES_TO_CHECK})
 
     string (REPLACE ";" "," ENABLE_CHECKS_LIST "${CHECK_SOURCES_ENABLE_CHECKS}")
-    string (REPLACE ";" "," DISABLE_CHECKS_LIST "${CHECK_SOURCES_DISABLE_CHECKS}")
+    string (REPLACE ";" "," DISABLE_CHECKS_LIST
+            "${CHECK_SOURCES_DISABLE_CHECKS}")
 
     set (CLANG_TIDY_OPTIONS
          -DVERBOSE=${CMAKE_VERBOSE_MAKEFILE}
-         -DCLANG_TIDY_EXECUTABLE=${CLANG_TIDY_EXECUTABLE}
+         "-DCLANG_TIDY_EXECUTABLE=${CLANG_TIDY_EXECUTABLE}"
          -DENABLE_CHECKS=${ENABLE_CHECKS_LIST}
          -DDISABLE_CHECKS=${DISABLE_CHECKS_LIST})
 
@@ -73,7 +71,7 @@ function (clang_tidy_check_target_sources TARGET)
         set (FORCE_LANGUAGE_OPTION
              FORCE_LANGUAGE ${CHECK_SOURCES_FORCE_LANGUAGE})
 
-    endif (CHECK_SOURCES_FORCE_LANGUAGE)
+    endif ()
 
     # Scan source languages and sort them out now. We will pass
     # each of these lists to psq_make_compilation_db for later
@@ -103,7 +101,7 @@ function (clang_tidy_check_target_sources TARGET)
 
             set (CUSTOM_COMPILATION_DB_SOURCES ${HEADERS})
 
-        endif (WHEN STREQUAL "PRE_LINK")
+        endif ()
 
     endif (CMAKE_GENERATOR STREQUAL "Ninja" OR
            CMAKE_GENERATOR STREQUAL "Unix Makefiles")
@@ -136,24 +134,24 @@ function (clang_tidy_check_target_sources TARGET)
 
         # Check if this source is one that requires a custom
         # compilation database
-        list (FIND CUSTOM_COMPILATION_DB_SOURCES ${SOURCE} SOURCE_INDEX)
+        list (FIND CUSTOM_COMPILATION_DB_SOURCES "${SOURCE}" SOURCE_INDEX)
 
         if (NOT SOURCE_INDEX EQUAL -1)
 
-            set (SOURCE_COMP_DB ${CUSTOM_COMPILATION_DB_DIR})
+            set (SOURCE_COMP_DB "${CUSTOM_COMPILATION_DB_DIR}")
 
-        else (NOT SOURCE_INDEX EQUAL -1)
+        else ()
 
-            set (SOURCE_COMP_DB ${CMAKE_BINARY_DIR})
+            set (SOURCE_COMP_DB "${CMAKE_BINARY_DIR}")
 
-        endif (NOT SOURCE_INDEX EQUAL -1)
+        endif ()
 
         psq_forward_options (CHECK_SOURCES RUN_TOOL_ON_SOURCE_FORWARD
                              MULTIVAR_ARGS DEPENDS)
-        psq_run_tool_on_source (${TARGET} ${SOURCE} "clang-tidy"
+        psq_run_tool_on_source (${TARGET} "${SOURCE}" "clang-tidy"
                                 COMMAND
-                                ${CMAKE_COMMAND}
-                                -DSOURCE=${SOURCE}
+                                "${CMAKE_COMMAND}"
+                                "-DSOURCE=${SOURCE}"
                                 -DCUSTOM_COMPILATION_DB_DIR=${SOURCE_COMP_DB}
                                 ${CLANG_TIDY_OPTIONS}
                                 -P

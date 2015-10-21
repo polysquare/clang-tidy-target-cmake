@@ -1,9 +1,10 @@
-# /tests/ClangTidyExitStatusWrapper.cmake
+# /util/ClangTidyExitStatusWrapper.cmake
+#
 # CMake macro to run clang-tidy and and check if there were any warnings
 # or errors on stderr. Exits with an error if there is if
-# WITH_ERRORS is specified
+# WARN_ONLY is not specified.
 #
-# See LICENCE.md for Copyright information
+# See /LICENCE.md for Copyright information
 include (CMakeParseArguments)
 set (WARN_ONLY FALSE CACHE FORCE "")
 set (ENABLE_CHECKS "" CACHE FORCE "")
@@ -18,54 +19,14 @@ if (NOT CLANG_TIDY_EXECUTABLE)
     message (FATAL_ERROR "CLANG_TIDY_EXECUTABLE was not specified. This is a "
                          "but in ClangTidy.cmake")
 
-endif (NOT CLANG_TIDY_EXECUTABLE)
+endif ()
 
 if (NOT SOURCE)
 
     message (FATAL_ERROR "SOURCE was not specified. This is a bug in "
                          "ClangTidy.cmake")
 
-endif (NOT SOURCE)
-
-function (_list_elements_to_comma_separated_list RETURN_LIST)
-
-    set (TO_COMMA_SEP_OPTIONS "")
-    set (TO_COMMA_SEP_SINGLEVAR_OPTIONS "")
-    set (TO_COMMA_SEP_MULTIVAR_OPTIONS ELEMENTS)
-
-    cmake_parse_arguments (TO_COMMA_SEP
-                           "${TO_COMMA_SEP_OPTIONS}"
-                           "${TO_COMMA_SEP_SINGLEVAR_OPTIONS}"
-                           "${TO_COMMA_SEP_MULTIVAR_OPTIONS}"
-                           ${ARGN})
-
-    list (LENGTH TO_COMMA_SEP_ELEMENTS TO_COMMA_SEP_ELEMENTS_LENGTH)
-
-    if (TO_COMMA_SEP_ELEMENTS_LENGTH EQUAL 0)
-
-        return ()
-
-    endif (TO_COMMA_SEP_ELEMENTS_LENGTH EQUAL 0)
-
-    set (COMMA_SEP_LIST "")
-
-    foreach (ELEMENT ${TO_COMMA_SEP_ELEMENTS})
-
-        set (COMMA_SEP_LIST "${COMMA_SEP_LIST}${ELEMENT},")
-
-    endforeach ()
-
-    # Trim the last comma
-    string (LENGTH "${COMMA_SEP_LIST}" COMMA_SEP_LIST_LENGTH)
-    math (EXPR TRIMMED_COMMA_SEP_LIST_LENGTH
-          "${COMMA_SEP_LIST_LENGTH} - 1")
-    string (SUBSTRING "${COMMA_SEP_LIST}"
-            0 ${TRIMMED_COMMA_SEP_LIST_LENGTH}
-            COMMA_SEP_LIST)
-
-    set (${RETURN_LIST} ${COMMA_SEP_LIST} PARENT_SCOPE)
-
-endfunction ()
+endif ()
 
 # Construct checks arguments
 set (ALL_CHECKS ${ENABLE_CHECKS})
@@ -78,7 +39,7 @@ foreach (CHECK ${DISABLE_CHECKS})
 
         set (ALL_CHECKS_COMMA ",")
 
-    endif (ALL_CHECKS)
+    endif ()
 
     set (ALL_CHECKS "${ALL_CHECKS}${ALL_CHECKS_COMMA}-${CHECK}")
 
@@ -88,20 +49,20 @@ if (ALL_CHECKS)
 
     set (CHECKS_SWITCH "-checks=${ALL_CHECKS}")
 
-endif (ALL_CHECKS)
+endif ()
 
 # Custom compilation DB
 if (CUSTOM_COMPILATION_DB_DIR)
 
     set (CUSTOM_COMPILATION_DB_SWITCH "-p=${CUSTOM_COMPILATION_DB_DIR}")
 
-endif (CUSTOM_COMPILATION_DB_DIR)
+endif ()
 
 set (CLANG_TIDY_COMMAND_LINE
-     ${CLANG_TIDY_EXECUTABLE}
+     "${CLANG_TIDY_EXECUTABLE}"
      ${CHECKS_SWITCH}
      ${CUSTOM_COMPILATION_DB_SWITCH}
-     ${SOURCE})
+     "${SOURCE}")
 string (REPLACE ";" " "
         CLANG_TIDY_PRINTED_COMMAND_LINE
         "${CLANG_TIDY_COMMAND_LINE}")
@@ -110,7 +71,7 @@ if (VERBOSE)
 
     message (STATUS ${CLANG_TIDY_PRINTED_COMMAND_LINE})
 
-endif (VERBOSE)
+endif ()
 
 execute_process (COMMAND
                  ${CLANG_TIDY_COMMAND_LINE}
@@ -130,7 +91,6 @@ if ("${CLANG_TIDY_OUTPUT}" MATCHES "^.*(error|warning).*$" OR
 
         message (FATAL_ERROR "Clang-Tidy found problems with your code")
 
-    endif (NOT WARN_ONLY)
+    endif ()
 
-endif ("${CLANG_TIDY_OUTPUT}" MATCHES "^.*(error|warning).*$" OR
-       NOT CLANG_TIDY_RESULT EQUAL 0)
+endif ()

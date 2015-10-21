@@ -1,0 +1,2 @@
+http://llvm.org/apt/precise/ llvm-toolchain-precise-3.6 main
+{launchpad}/ubuntu-toolchain-r/test/ubuntu {release} main

@@ -1,4 +1,4 @@
-# FindClangTidy.cmake
+# /FindCLANGTIDY.cmake
 #
 # This CMake script will search for clang-tidy and set the following
 # variables
@@ -12,17 +12,13 @@
 #                           before searching any system paths. This should be
 #                           the prefix to which clang-tidy was installed, and
 #                           not the path that contains the clang-tidy binary.
-#                           E.g. /opt/ not /opt/bin/
+#                           Eg /opt/ not /opt/bin/
 #
-# See LICENCE.md for Copyright info
+# See /LICENCE.md for Copyright information
 
-set (CMAKE_MODULE_PATH
-     ${CMAKE_MODULE_PATH}
-     ${CMAKE_CURRENT_LIST_DIR}/tooling-find-package-cmake-util)
+include ("smspillaz/tooling-find-pkg-util/ToolingFindPackageUtil")
 
-include (ToolingFindPackageUtil)
-
-function (_find_clang_tidy)
+function (clang_tidy_find)
 
     # Set-up the directory tree of the clang-tidy installation
     set (BIN_SUBDIR bin)
@@ -35,7 +31,8 @@ function (_find_clang_tidy)
 
     psq_report_not_found_if_not_quiet (ClangTidy CLANG_TIDY_EXECUTABLE
                                        "The 'clang-tidy' executable was not"
-                                       "found in any search or system paths.\n.."
+                                       "found in any search or system"
+                                       "paths.\n.."
                                        "Please adjust CLANG_TIDY_SEARCH_PATHS"
                                        "to the installation prefix of the"
                                        "'clang-tidy'\n.. executable or install"
@@ -46,14 +43,14 @@ function (_find_clang_tidy)
         set (CLANG_TIDY_VERSION_HEADER
              "LLVM version ")
 
-        psq_find_tool_extract_version (${CLANG_TIDY_EXECUTABLE}
+        psq_find_tool_extract_version ("${CLANG_TIDY_EXECUTABLE}"
                                        CLANG_TIDY_VERSION
                                        VERSION_ARG --version
                                        VERSION_HEADER
                                        "${CLANG_TIDY_VERSION_HEADER}"
                                        VERSION_END_TOKEN "\n")
 
-    endif (CLANG_TIDY_EXECUTABLE)
+    endif ()
 
     psq_check_and_report_tool_version (ClangTidy
                                        "${CLANG_TIDY_VERSION}"
@@ -61,8 +58,8 @@ function (_find_clang_tidy)
                                        CLANG_TIDY_EXECUTABLE
                                        CLANG_TIDY_VERSION)
 
-    set (ClangTidy_FOUND ${ClangTidy_FOUND} PARENT_SCOPE)
+    set (CLANG_TIDY_FOUND ${ClangTidy_FOUND} PARENT_SCOPE)
 
-endfunction (_find_clang_tidy)
+endfunction ()
 
-_find_clang_tidy ()
+clang_tidy_find ()
