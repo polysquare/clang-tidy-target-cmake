@@ -1,27 +1,34 @@
-\language: cpp
+language: cpp
+sudo: false
+cache:
+  directories:
+  - container
 env:
-  - CMAKE_GENERATOR="Unix Makefiles"
-  - CMAKE_GENERATOR="Ninja"
-before_install:
-  - git submodule update --init --recursive
-  - sudo apt-add-repository -y ppa:kalakris/cmake
-  - sudo apt-add-repository -y ppa:ubuntu-toolchain-r/test
-  - echo deb http://llvm.org/apt/precise/ llvm-toolchain-precise main | sudo tee --append /etc/apt/sources.list
-  - echo deb http://llvm.org/apt/precise/ llvm-toolchain-precise main | sudo tee --append /etc/apt/sources.list
-  - sudo apt-get update -y
-  - sudo apt-get install -qq --force-yes `cat DEPENDENCIES`
-  - sudo ln -s /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy
-  # Workaround to get Ninja to display verbose output
-  - if [[ $CMAKE_GENERATOR == "Ninja" ]] ; then
-     echo -e '!#/bin/bash\n/usr/bin/ninja -v $@' > ninja;
-     chmod +x ninja;
-     export PATH=`pwd`:${PATH};
-    fi
+- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" DEPLOY="1"
+- CMAKE_GENERATOR="Ninja" CMAKE_VERSION="latest"
+- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="3.0"
+- CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
+- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
+install:
+- eval $(curl -LSs --retry 100 --connect-timeout 3 public-travis-scripts.polysquare.org/bootstrap.py | python /dev/stdin -d container -s setup/bii/setup.py -e bash -p /dev/stdout --cmake-version ${CMAKE_VERSION})
+- if [[ "${TRAVIS_OS_NAME}" == "linux" ]] ; then container/_languages/python/3.4.1/bin/psq-travis-container-exec --distro Ubuntu --release precise container/_languages/os/Ubuntu.precise.None --show-output -- ln -sf /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy ; fi
+- if [[ "${TRAVIS_OS_NAME}" == "osx" ]] ; then container/_languages/python/3.4.2/bin/psq-travis-container-exec --distro OSX --release precise container/_languages/os/OSX.10.10.None --show-output -- brew link llvm --force ; fi
 script:
-  - clang-tidy --version
-  - mkdir -p test/build
-  - pushd test/build
-  - cmake .. -G "${CMAKE_GENERATOR}" &&
-    cmake --build `pwd` &&
-    ctest --output-on-failure &&
-    popd
+- polysquare_run check/bii/check.py ${COVERAGE} --cmake-namespace "clang_tidy" --generator "${CMAKE_GENERATOR}" --block "smspillaz/clang-tidy-target-cmake"
+before_cache:
+- polysquare_cleanup
+after_success:
+- polysquare_run coverage/bii/coverage.py
+before_deploy:
+- polysquare_run deploy/bii/deploy.py
+deploy:
+  provider: biicode
+  skip_cleanup: true
+  user:
+    secure: J5JPMuxENUqUJf6AKPiY1MdO9xAlXGwhLkGyGwceQWHZ42yqvC9kaRxwSPGVD964qi4/KGADx+pOZpUyTiJQXp8bS4vir6RzPTtVbS4yhtZYvgI5oWi9/3DNxAwqVwBTb7Jw81EWV4ahG53zpqgBTrdb16zT8xsKZz3WoUOfmT4=
+  password:
+    secure: A5WtjsL19sYMgoPackDoMWpHZZByUX/Kkm9CVwa6uTs7HzVBiMi6Yo9maRES1sqIFN3w0v8M+t3s/B5EDtR7Kygc5tmMJ55jzQEPkqvPkEcDYdfkMyFSHEX06UvwueLBvU1gRLdioyMxdWEM1h4n68jFg4NAmCqFanoyeiw/gUg=
+  on:
+    repo: polysquare/clang-tidy-target-cmake
+    branch: master
+    condition: ${DEPLOY} = 1
