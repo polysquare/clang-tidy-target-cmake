@@ -9,11 +9,15 @@ include ("smspillaz/tooling-cmake-util/PolysquareToolingUtil")
 
 set (CLANG_TIDY_EXIT_STATUS_WRAPPER_LOCATION
      "${CMAKE_CURRENT_LIST_DIR}/util/ClangTidyExitStatusWrapper.cmake")
+set (_CLANG_TIDY_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 macro (clang_tidy_validate CONTINUE)
 
     if (NOT DEFINED CLANG_TIDY_FOUND)
 
+        set (CMAKE_MODULE_PATH
+             ${CMAKE_MODULE_PATH} # NOLINT:correctness/quotes
+             "${_CLANG_TIDY_LIST_DIR}")
         find_package (CLANGTIDY ${ARGN})
 
     endif ()
