@@ -4,31 +4,46 @@ cache:
   directories:
   - container
 env:
-- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" DEPLOY="1"
-- CMAKE_GENERATOR="Ninja" CMAKE_VERSION="latest"
-- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="3.0"
-- CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
-- CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
+  matrix:
+  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" DEPLOY="1"
+  - CMAKE_GENERATOR="Ninja" CMAKE_VERSION="latest"
+  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="3.0"
+  - CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
+  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
+  global:
+  - secure: U1V3s1mvi8iAQSJoOFlLHgvJxyvOZ++8FC2KPn+u/8R8c0UhcZGALsRs9JpCetTME8gL6hv76BGnXdydP4iwMJtniH5tuPRAkoy+TYrDOZ9YJMNCDdgd63mhD9bGMkVEX6+3PREG11VZvOv1se9Mue3oJD0edgnNj3JQXA4r7zg=
+  - secure: K+0q5f6ylInJE6DvrxWwPh502cIPPp/uUdx2kxiwFqierFQxWkyGyVTsPpjDmo+tR68dkBYmIQBElkDx2MgmQIrrLvSfvDtj+A1afk9NLkytQf3umvAFi5xv2fl+ZH5Ac326IO/RuNBx3Wx3IqhDeo91W+0JNEo5cc7LD9hKZXk=
+  - secure: QG6fIJ2wDI/gR52FcScEfPpHX2WNZugye6poFloW9r/I7gN4IoEbi0kGln08UrzE/P7DAg7Jao6Of9ew/4xLMMp+2IPfU5TiWuF1H6d739pZFx7dRCycEzxaluFWFPcb8IkZlrIdUhAZc6e13re645XUthvGvuHHWQd0i9+5lQA=
+addons:
+  apt:
+    sources:
+    - deadsnakes
+    packages:
+    - python3.4-dev
 install:
-- eval $(curl -LSs --retry 100 --connect-timeout 3 public-travis-scripts.polysquare.org/bootstrap.py | python /dev/stdin -d container -s setup/bii/setup.py -e bash -p /dev/stdout --cmake-version ${CMAKE_VERSION})
-- if [[ "${TRAVIS_OS_NAME}" == "linux" ]] ; then container/_languages/python/3.4.1/bin/psq-travis-container-exec --distro Ubuntu --release precise container/_languages/os/Ubuntu.precise.None --show-output -- ln -sf /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy ; fi
-- if [[ "${TRAVIS_OS_NAME}" == "osx" ]] ; then container/_languages/python/3.4.2/bin/psq-travis-container-exec --distro OSX --release precise container/_languages/os/OSX.10.10.None --show-output -- brew link llvm --force ; fi
+- eval $(curl -LSs --retry 100 --connect-timeout 3 public-travis-scripts.polysquare.org/bootstrap.py
+  | python /dev/stdin -d container -s setup/conan/setup.py -e bash -p /dev/stdout
+  --cmake-version ${CMAKE_VERSION})
+- if [[ "${TRAVIS_OS_NAME}" == "linux" ]] ; then container/_languages/python/3.4.4/bin/psq-travis-container-exec
+  --distro Ubuntu --release precise container/_languages/os/Ubuntu.precise.None --show-output
+  -- ln -sf /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy ; fi
+- if [[ "${TRAVIS_OS_NAME}" == "osx" ]] ; then container/_languages/python/3.5.1/bin/psq-travis-container-exec
+  --distro OSX --release precise container/_languages/os/OSX.10.10.None --show-output
+  -- brew link llvm --force ; fi
 script:
-- polysquare_run check/bii/check.py ${COVERAGE} --cmake-namespace "clang_tidy" --generator "${CMAKE_GENERATOR}" --block "smspillaz/clang-tidy-target-cmake"
+- polysquare_run check/conan/check.py ${COVERAGE} --cmake-namespace "clang_tidy" --generator
+  "${CMAKE_GENERATOR}"
 before_cache:
 - polysquare_cleanup
 after_success:
-- polysquare_run coverage/bii/coverage.py
+- polysquare_run coverage/cmake/coverage.py
 before_deploy:
-- polysquare_run deploy/bii/deploy.py
+- polysquare_run deploy/conan/before_deploy.py --package="clang-tidy-target-cmake"
 deploy:
-  provider: biicode
+  provider: script
   skip_cleanup: true
-  user:
-    secure: J5JPMuxENUqUJf6AKPiY1MdO9xAlXGwhLkGyGwceQWHZ42yqvC9kaRxwSPGVD964qi4/KGADx+pOZpUyTiJQXp8bS4vir6RzPTtVbS4yhtZYvgI5oWi9/3DNxAwqVwBTb7Jw81EWV4ahG53zpqgBTrdb16zT8xsKZz3WoUOfmT4=
-  password:
-    secure: A5WtjsL19sYMgoPackDoMWpHZZByUX/Kkm9CVwa6uTs7HzVBiMi6Yo9maRES1sqIFN3w0v8M+t3s/B5EDtR7Kygc5tmMJ55jzQEPkqvPkEcDYdfkMyFSHEX06UvwueLBvU1gRLdioyMxdWEM1h4n68jFg4NAmCqFanoyeiw/gUg=
+  script: "./travis-deploy"
   on:
     repo: polysquare/clang-tidy-target-cmake
     branch: master
-    condition: ${DEPLOY} = 1
+    condition: "${DEPLOY} = 1"
