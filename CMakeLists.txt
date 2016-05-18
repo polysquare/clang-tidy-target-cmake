@@ -17,8 +17,7 @@ set (CMAKE_MODULE_PATH
      "${CMAKE_MODULE_PATH}"
      "${CMAKE_CURRENT_LIST_DIR}")
 
-include ("cmake/cmake-unit/CMakeUnitRunner")
-include ("cmake/cmake-unit/CMakeUnit")
+include ("cmake/cmake-module-common/Common")
 include (ClangTidy)
 
 if (NOT CMAKE_SCRIPT_MODE_FILE)
@@ -1064,7 +1063,13 @@ endfunction ()
 cmake_unit_register_matcher_namespace (clang_tidy)
 
 set (UTIL_DIR "${CMAKE_CURRENT_LIST_DIR}/util")
-cmake_unit_init (NAMESPACE clang_tidy
-                 COVERAGE_FILES "${CMAKE_CURRENT_LIST_DIR}/ClangTidy.cmake"
-                                "${CMAKE_CURRENT_LIST_DIR}/FindCLANGTIDY.cmake"
-                                "${UTIL_DIR}/ClangTidyExitStatusWrapper.cmake")
+set (CMAKE_FILES "${CMAKE_CURRENT_LIST_DIR}/ClangTidy.cmake"
+                 "${CMAKE_CURRENT_LIST_DIR}/FindCLANGTIDY.cmake"
+                 "${UTIL_DIR}/ClangTidyExitStatusWrapper.cmake")
+set (MARKDOWN_FILES
+     "${CMAKE_CURRENT_LIST_DIR}/LICENSE.md"
+     "${CMAKE_CURRENT_LIST_DIR}/README.md")
+
+cmake_module_add_common_targets (NAMESPACE "clang_tidy"
+                                 CMAKE_FILES ${CMAKE_FILES}
+                                 DOCUMENTATION_FILES ${MARKDOWN_FILES})
