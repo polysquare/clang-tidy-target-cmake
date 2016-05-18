@@ -1067,7 +1067,7 @@ set (CMAKE_FILES "${CMAKE_CURRENT_LIST_DIR}/ClangTidy.cmake"
                  "${CMAKE_CURRENT_LIST_DIR}/FindCLANGTIDY.cmake"
                  "${UTIL_DIR}/ClangTidyExitStatusWrapper.cmake")
 set (MARKDOWN_FILES
-     "${CMAKE_CURRENT_LIST_DIR}/LICENSE.md"
+     "${CMAKE_CURRENT_LIST_DIR}/LICENCE.md"
      "${CMAKE_CURRENT_LIST_DIR}/README.md")
 
 cmake_module_add_common_targets (NAMESPACE "clang_tidy"
