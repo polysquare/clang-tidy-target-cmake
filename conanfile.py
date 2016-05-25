@@ -15,6 +15,14 @@ class ClangTidyTargetCMakeConan(ConanFile):
                 "cmake-unit/master@smspillaz/cmake-unit")
     url = "http://github.com/polysquare/clang-tidy-target-cmake"
     license = "MIT"
+    options = {
+        "dev": [True, False]
+    }
+    default_options = "dev=False"
+
+    def requirements(self):
+        if self.options.dev:
+            self.requires("cmake-module-common/master@smspillaz/cmake-module-common")
 
     def source(self):
         zip_name = "clang-tidy-target-cmake.zip"
