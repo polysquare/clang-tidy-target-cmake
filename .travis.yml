@@ -32,13 +32,6 @@ install:
 - eval $(curl -LSs --retry 100 --connect-timeout 3 public-travis-scripts.polysquare.org/bootstrap.py
   | python /dev/stdin -d container -s setup/conan/setup.py -e bash -p /dev/stdout
   --cmake-version ${CMAKE_VERSION})
-- if [[ "${TRAVIS_OS_NAME}" == "linux" ]] ; then
-  ln -sf container/_languages/os/Ubuntu.precise.None/ubuntu-core-12.04.3-core-amd64.tar.gz.root/packages/usr/bin/clang-tidy-3.6
-  container/_languages/os/Ubuntu.precise.None/ubuntu-core-12.04.3-core-amd64.tar.gz.root/packages/usr/bin/clang-tidy;
-  fi
-- if [[ "${TRAVIS_OS_NAME}" == "osx" ]] ; then container/_languages/python/3.5.1/bin/psq-travis-container-exec
-  --distro OSX --release precise container/_languages/os/OSX.10.10.None --show-output
-  -- brew link llvm --force ; fi
 script:
 - polysquare_run check/conan/check.py ${COVERAGE} --cmake-namespace "clang_tidy" --generator
   "${CMAKE_GENERATOR}"
