@@ -300,7 +300,7 @@ function (clang_tidy_test_generate_comp_db)
                                 ${COMMAND})
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
-        string (REPLACE "+" "\\+" ESCAPED_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        cmake_unit_escape_string ("${CMAKE_CXX_COMPILER}" ESCAPED_CXX_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS}
                                 file_contents
                                 any_line
@@ -615,9 +615,10 @@ function (clang_tidy_test_comp_db_use_c_compiler_for_c_header)
 
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
+        cmake_unit_escape_string ("${CMAKE_C_COMPILER}" ESCAPED_C_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
-                                "^.*${CMAKE_C_COMPILER}.*Header.h.*$")
+                                "^.*${ESCAPED_C_COMPILER}.*Header.h.*$")
 
     endfunction ()
 
@@ -772,7 +773,7 @@ function (clang_tidy_test_comp_db_use_cxx_compiler_for_cpp_header)
 
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
-        string (REPLACE "+" "\\+" ESCAPED_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        cmake_unit_escape_string ("${CMAKE_CXX_COMPILER}" ESCAPED_CXX_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
                                 "^.*${ESCAPED_CXX_COMPILER}.*Header.h.*$")
