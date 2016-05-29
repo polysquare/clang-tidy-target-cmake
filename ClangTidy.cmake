@@ -50,6 +50,10 @@ function (clang_tidy_check_target_sources TARGET)
                            "${CHECK_SOURCES_MULTIVAR_OPTIONS}"
                            ${ARGN})
 
+    list (APPEND CHECK_SOURCES_DISABLE_CHECKS
+                 "clang-diagnostic-unknown-argument"
+                 "clang-diagnostic-unused-command-line-argument")
+
     psq_strip_extraneous_sources (FILES_TO_CHECK ${TARGET})
     psq_handle_check_generated_option (CHECK_SOURCES FILES_TO_CHECK
                                        SOURCES ${FILES_TO_CHECK})
