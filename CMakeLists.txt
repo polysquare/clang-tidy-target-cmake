@@ -139,7 +139,7 @@ function (clang_tidy_test_check_generated_flag)
                                 file_contents
                                 any_line
                                 matches_regex
-                                "^.*clang-tidy .*Generated.cpp.*$")
+                                "^.*clang-tidy.* .*Generated.cpp.*$")
 
     endfunction ()
 
@@ -436,13 +436,13 @@ function (clang_tidy_test_no_check_generated)
         cmake_unit_get_log_for (INVOKE_BUILD OUTPUT BUILD_OUTPUT)
         cmake_unit_assert_that (${BUILD_OUTPUT} file_contents any_line
                                 matches_regex
-                                "^.*clang-tidy .*Source.cpp.*$")
+                                "^.*clang-tidy.* .*Source.cpp.*$")
         cmake_unit_assert_that (${BUILD_OUTPUT}
                                 not
                                 file_contents
                                 any_line
                                 matches_regex
-                                "^.*clang-tidy .*Generated.cpp$")
+                                "^.*clang-tidy.* .*Generated.cpp$")
 
     endfunction ()
 
