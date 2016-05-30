@@ -15,8 +15,6 @@ matrix:
     env: CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
   - os: linux
     env: CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
-  - os: osx
-    env: CMAKE_GENERATOR="Xcode" CMAKE_VERSION="latest"
 env:
   global:
   - secure: U1V3s1mvi8iAQSJoOFlLHgvJxyvOZ++8FC2KPn+u/8R8c0UhcZGALsRs9JpCetTME8gL6hv76BGnXdydP4iwMJtniH5tuPRAkoy+TYrDOZ9YJMNCDdgd63mhD9bGMkVEX6+3PREG11VZvOv1se9Mue3oJD0edgnNj3JQXA4r7zg=
