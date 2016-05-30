@@ -560,11 +560,21 @@ function (clang_tidy_test_comp_db_includes)
 
     function (clang_tidy_verify)
 
+        if (CMAKE_GENERATOR MATCHES "NMake.*|Visual.*")
+
+            set (SYS_INC_FLAG "-I")
+
+        else ()
+
+            set (SYS_INC_FLAG "-isystem")
+
+        endif ()
+
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
-                                "^.*-isystem.*external.*$")
+                                "^.*${SYS_INC_FLAG}.*external.*$")
         cmake_unit_assert_that (${COMPILE_COMMANDS}
                                 file_contents
                                 any_line
@@ -993,7 +1003,10 @@ function (clang_tidy_test_comp_db_use_cxx_language_opt_for_cpp_header)
 
     if (HAVE_CLANG_TIDY)
 
-        cmake_unit_configure_test (INVOKE_CONFIGURE OPTIONS LANGUAGES C CXX
+        cmake_unit_configure_test (PRECONFIGURE OPTIONS
+                                                SKIP_GENERATOR_REGEX
+                                                "NMake.*|Visual.*"
+                                   INVOKE_CONFIGURE OPTIONS LANGUAGES C CXX
                                    CONFIGURE COMMAND clang_tidy_configure
                                    VERIFY COMMAND clang_tidy_verify)
 
