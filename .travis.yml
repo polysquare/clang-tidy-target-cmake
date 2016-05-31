@@ -3,13 +3,19 @@ sudo: false
 cache:
   directories:
   - container
+matrix:
+  include:
+  - os: linux
+    env: CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" DEPLOY="1"
+  - os: linux
+    env: CMAKE_GENERATOR="Ninja" CMAKE_VERSION="latest"
+  - os: linux
+    env: CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="3.0"
+  - os: linux
+    env: CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
+  - os: linux
+    env: CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
 env:
-  matrix:
-  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" DEPLOY="1"
-  - CMAKE_GENERATOR="Ninja" CMAKE_VERSION="latest"
-  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="3.0"
-  - CMAKE_GENERATOR="Ninja" CMAKE_VERSION="3.0"
-  - CMAKE_GENERATOR="Unix Makefiles" CMAKE_VERSION="latest" COVERAGE="--use-cmake-coverage"
   global:
   - secure: U1V3s1mvi8iAQSJoOFlLHgvJxyvOZ++8FC2KPn+u/8R8c0UhcZGALsRs9JpCetTME8gL6hv76BGnXdydP4iwMJtniH5tuPRAkoy+TYrDOZ9YJMNCDdgd63mhD9bGMkVEX6+3PREG11VZvOv1se9Mue3oJD0edgnNj3JQXA4r7zg=
   - secure: K+0q5f6ylInJE6DvrxWwPh502cIPPp/uUdx2kxiwFqierFQxWkyGyVTsPpjDmo+tR68dkBYmIQBElkDx2MgmQIrrLvSfvDtj+A1afk9NLkytQf3umvAFi5xv2fl+ZH5Ac326IO/RuNBx3Wx3IqhDeo91W+0JNEo5cc7LD9hKZXk=
@@ -24,12 +30,6 @@ install:
 - eval $(curl -LSs --retry 100 --connect-timeout 3 public-travis-scripts.polysquare.org/bootstrap.py
   | python /dev/stdin -d container -s setup/conan/setup.py -e bash -p /dev/stdout
   --cmake-version ${CMAKE_VERSION})
-- if [[ "${TRAVIS_OS_NAME}" == "linux" ]] ; then container/_languages/python/3.4.4/bin/psq-travis-container-exec
-  --distro Ubuntu --release precise container/_languages/os/Ubuntu.precise.None --show-output
-  -- ln -sf /usr/bin/clang-tidy-3.6 /usr/bin/clang-tidy ; fi
-- if [[ "${TRAVIS_OS_NAME}" == "osx" ]] ; then container/_languages/python/3.5.1/bin/psq-travis-container-exec
-  --distro OSX --release precise container/_languages/os/OSX.10.10.None --show-output
-  -- brew link llvm --force ; fi
 script:
 - polysquare_run check/conan/check.py ${COVERAGE} --cmake-namespace "clang_tidy" --generator
   "${CMAKE_GENERATOR}"

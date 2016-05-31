@@ -17,8 +17,7 @@ set (CMAKE_MODULE_PATH
      "${CMAKE_MODULE_PATH}"
      "${CMAKE_CURRENT_LIST_DIR}")
 
-include ("cmake/cmake-unit/CMakeUnitRunner")
-include ("cmake/cmake-unit/CMakeUnit")
+include ("cmake/cmake-module-common/Common" OPTIONAL)
 include (ClangTidy)
 
 if (NOT CMAKE_SCRIPT_MODE_FILE)
@@ -140,7 +139,7 @@ function (clang_tidy_test_check_generated_flag)
                                 file_contents
                                 any_line
                                 matches_regex
-                                "^.*clang-tidy .*Generated.cpp.*$")
+                                "^.*clang-tidy.* .*Generated.cpp.*$")
 
     endfunction ()
 
@@ -301,7 +300,7 @@ function (clang_tidy_test_generate_comp_db)
                                 ${COMMAND})
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
-        string (REPLACE "+" "\\+" ESCAPED_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        cmake_unit_escape_string ("${CMAKE_CXX_COMPILER}" ESCAPED_CXX_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS}
                                 file_contents
                                 any_line
@@ -437,13 +436,13 @@ function (clang_tidy_test_no_check_generated)
         cmake_unit_get_log_for (INVOKE_BUILD OUTPUT BUILD_OUTPUT)
         cmake_unit_assert_that (${BUILD_OUTPUT} file_contents any_line
                                 matches_regex
-                                "^.*clang-tidy .*Source.cpp.*$")
+                                "^.*clang-tidy.* .*Source.cpp.*$")
         cmake_unit_assert_that (${BUILD_OUTPUT}
                                 not
                                 file_contents
                                 any_line
                                 matches_regex
-                                "^.*clang-tidy .*Generated.cpp$")
+                                "^.*clang-tidy.* .*Generated.cpp$")
 
     endfunction ()
 
@@ -561,11 +560,21 @@ function (clang_tidy_test_comp_db_includes)
 
     function (clang_tidy_verify)
 
+        if (CMAKE_GENERATOR MATCHES "NMake.*|Visual.*")
+
+            set (SYS_INC_FLAG "-I")
+
+        else ()
+
+            set (SYS_INC_FLAG "-isystem")
+
+        endif ()
+
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
-                                "^.*-isystem.*external.*$")
+                                "^.*${SYS_INC_FLAG}.*external.*$")
         cmake_unit_assert_that (${COMPILE_COMMANDS}
                                 file_contents
                                 any_line
@@ -616,9 +625,10 @@ function (clang_tidy_test_comp_db_use_c_compiler_for_c_header)
 
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
+        cmake_unit_escape_string ("${CMAKE_C_COMPILER}" ESCAPED_C_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
-                                "^.*${CMAKE_C_COMPILER}.*Header.h.*$")
+                                "^.*${ESCAPED_C_COMPILER}.*Header.h.*$")
 
     endfunction ()
 
@@ -773,7 +783,7 @@ function (clang_tidy_test_comp_db_use_cxx_compiler_for_cpp_header)
 
         set (COMPILE_COMMANDS
              "${BINARY_DIR}/target_compile_commands/compile_commands.json")
-        string (REPLACE "+" "\\+" ESCAPED_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+        cmake_unit_escape_string ("${CMAKE_CXX_COMPILER}" ESCAPED_CXX_COMPILER)
         cmake_unit_assert_that (${COMPILE_COMMANDS} file_contents any_line
                                 matches_regex
                                 "^.*${ESCAPED_CXX_COMPILER}.*Header.h.*$")
@@ -993,7 +1003,10 @@ function (clang_tidy_test_comp_db_use_cxx_language_opt_for_cpp_header)
 
     if (HAVE_CLANG_TIDY)
 
-        cmake_unit_configure_test (INVOKE_CONFIGURE OPTIONS LANGUAGES C CXX
+        cmake_unit_configure_test (PRECONFIGURE OPTIONS
+                                                SKIP_GENERATOR_REGEX
+                                                "NMake.*|Visual.*"
+                                   INVOKE_CONFIGURE OPTIONS LANGUAGES C CXX
                                    CONFIGURE COMMAND clang_tidy_configure
                                    VERIFY COMMAND clang_tidy_verify)
 
@@ -1064,7 +1077,17 @@ endfunction ()
 cmake_unit_register_matcher_namespace (clang_tidy)
 
 set (UTIL_DIR "${CMAKE_CURRENT_LIST_DIR}/util")
-cmake_unit_init (NAMESPACE clang_tidy
-                 COVERAGE_FILES "${CMAKE_CURRENT_LIST_DIR}/ClangTidy.cmake"
-                                "${CMAKE_CURRENT_LIST_DIR}/FindCLANGTIDY.cmake"
-                                "${UTIL_DIR}/ClangTidyExitStatusWrapper.cmake")
+set (CMAKE_FILES "${CMAKE_CURRENT_LIST_DIR}/ClangTidy.cmake"
+                 "${CMAKE_CURRENT_LIST_DIR}/FindCLANGTIDY.cmake"
+                 "${UTIL_DIR}/ClangTidyExitStatusWrapper.cmake")
+set (MARKDOWN_FILES
+     "${CMAKE_CURRENT_LIST_DIR}/LICENCE.md"
+     "${CMAKE_CURRENT_LIST_DIR}/README.md")
+
+if (COMMAND cmake_module_add_common_targets)
+
+    cmake_module_add_common_targets (NAMESPACE "clang_tidy"
+                                     CMAKE_FILES ${CMAKE_FILES}
+                                     DOCUMENTATION_FILES ${MARKDOWN_FILES})
+
+endif ()

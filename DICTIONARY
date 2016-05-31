@@ -13,6 +13,7 @@ linkable
 namespace
 NOTFOUND
 polysquare
+POLYSQUARE
 PRE_LINK
 preprocessing
 stderr

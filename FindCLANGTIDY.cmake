@@ -24,10 +24,29 @@ function (clang_tidy_find)
     set (BIN_SUBDIR bin)
     set (CLANG_TIDY_EXECUTABLE_NAME clang-tidy)
 
-    psq_find_tool_executable (${CLANG_TIDY_EXECUTABLE_NAME}
-                              CLANG_TIDY_EXECUTABLE
-                              PATHS ${CLANG_TIDY_SEARCH_PATHS}
-                              PATH_SUFFIXES "${BIN_SUBDIR}")
+    # Search for the canonical executable, then search for ones with
+    # a version from newest to oldest.
+    set (CLANG_TIDY_EXECUTABLE_NAMES clang-tidy
+                                     clang-tidy-3.9
+                                     clang-tidy-3.8
+                                     clang-tidy-3.7
+                                     clang-tidy-3.6
+                                     clang-tidy-3.5)
+
+    foreach (CLANG_TIDY_EXECUTABLE_NAME ${CLANG_TIDY_EXECUTABLE_NAMES})
+
+        psq_find_tool_executable (${CLANG_TIDY_EXECUTABLE_NAME}
+                                  CLANG_TIDY_EXECUTABLE
+                                  PATHS ${CLANG_TIDY_SEARCH_PATHS}
+                                  PATH_SUFFIXES "${BIN_SUBDIR}")
+
+        if (CLANG_TIDY_EXECUTABLE)
+
+            break ()
+
+        endif ()
+
+    endforeach ()
 
     psq_report_not_found_if_not_quiet (ClangTidy CLANG_TIDY_EXECUTABLE
                                        "The 'clang-tidy' executable was not"

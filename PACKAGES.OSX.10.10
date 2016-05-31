@@ -1,1 +1,1 @@
-llvm --with-clang
+http://llvm.org/releases/3.8.0/clang+llvm-3.8.0-x86_64-apple-darwin.tar.xz
